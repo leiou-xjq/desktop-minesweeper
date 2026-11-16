@@ -149,7 +149,7 @@ internal static class GameSelfTest
         {
             for (var column = 0; column < columns; column++)
             {
-                cells.Add(new BoardCell(column, row, column * 32, row * 32, 32, 32, string.Empty, null, null, 0, 0, 0, 0, null));
+                cells.Add(new BoardCell(column, row, column * 32, row * 32, 32, 32, string.Empty, null, null, null, 0, 0, 0, 0, null));
             }
         }
 
@@ -169,7 +169,7 @@ internal static class GameSelfTest
                     continue;
                 }
 
-                cells.Add(new BoardCell(column, row, column * 32, row * 32, 32, 32, string.Empty, null, null, 0, 0, 0, 0, null));
+                cells.Add(new BoardCell(column, row, column * 32, row * 32, 32, 32, string.Empty, null, null, null, 0, 0, 0, 0, null));
             }
         }
 

@@ -18,6 +18,7 @@ public sealed record BoardCell(
     double Height,
     string Text,
     BitmapSource? Thumbnail,
+    BitmapSource? GlassThumbnail,
     BitmapSource? Icon,
     double IconX,
     double IconY,
@@ -157,6 +158,10 @@ public static class BoardGridBuilder
                     icon.ClientX - padX + pitchX,
                     icon.ClientY + pitchY));
 
+            // Frosted backdrop used while the cell is covered: the live icon is
+            // readable as a silhouette but the cell still reads as glass.
+            var glass = DesktopBitmapCapture.BlurAndDarken(thumbnail, 8, 0.55);
+
             var iconOffsetX = padX * scale;
             var iconOffsetY = (icon.IconRect.Top - icon.ClientY) * scale;
 
@@ -169,6 +174,7 @@ public static class BoardGridBuilder
                 height,
                 icon.Text,
                 thumbnail,
+                glass,
                 cropped,
                 iconOffsetX,
                 iconOffsetY,
@@ -208,6 +214,7 @@ public static class BoardGridBuilder
                     cellWidth,
                     cellHeight,
                     string.Empty,
+                    null,
                     null,
                     null,
                     0,
