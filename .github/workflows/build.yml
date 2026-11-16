@@ -1,0 +1,67 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build
+        run: dotnet build src/DesktopMinesweeper/DesktopMinesweeper.csproj -c Release
+
+      - name: Publish self-contained single file
+        run: >
+          dotnet publish src/DesktopMinesweeper/DesktopMinesweeper.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -p:PublishTrimmed=false
+          -o dist/win-x64
+
+      - name: Publish framework-dependent
+        run: >
+          dotnet publish src/DesktopMinesweeper/DesktopMinesweeper.csproj
+          -c Release -r win-x64 --self-contained false
+          -p:PublishSingleFile=true
+          -o dist/win-x64-fx
+
+      - name: Create checksums
+        shell: pwsh
+        run: |
+          Get-ChildItem dist -Recurse -Filter *.exe | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($_.Name)" | Set-Content "$($_.FullName).sha256"
+          }
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-minesweeper-win-x64
+          path: dist/**
+
+      - name: Attach release assets
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/win-x64/*.exe
+            dist/win-x64/*.sha256
+            dist/win-x64-fx/*.exe
+            dist/win-x64-fx/*.sha256
+          generate_release_notes: true

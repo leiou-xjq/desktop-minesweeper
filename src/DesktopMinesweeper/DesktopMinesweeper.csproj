@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>DesktopMinesweeper</AssemblyName>
+    <RootNamespace>DesktopMinesweeper</RootNamespace>
+    <Version>0.1.0</Version>
+    <Description>Desktop Minesweeper - a read-only transparent overlay game for Windows.</Description>
+  </PropertyGroup>
+
+</Project>

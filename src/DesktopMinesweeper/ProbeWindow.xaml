@@ -1,0 +1,14 @@
+<Window x:Class="DesktopMinesweeper.ProbeWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Desktop Minesweeper - Phase 0 Probe"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        WindowStartupLocation="Manual"
+        SnapsToDevicePixels="True">
+    <Canvas x:Name="RootCanvas" Background="Transparent" />
+</Window>

@@ -1,0 +1,18 @@
+# Local toolchain (installed by scripts/setup-sdk.ps1)
+.dotnet/
+
+# Build output
+bin/
+obj/
+.git-credentials
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+
+# OS noise
+Thumbs.db
+desktop.ini
+.DS_Store
