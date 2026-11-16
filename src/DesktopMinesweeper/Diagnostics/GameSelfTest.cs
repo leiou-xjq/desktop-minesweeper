@@ -89,7 +89,18 @@ internal static class GameSelfTest
         loseGame.Reveal(loseGame.Cells.First(cell => !cell.IsMine && !cell.IsRevealed));
         Check("input is ignored after loss", loseGame.Status == GameStatus.Lost);
 
-        // 7. Winning flags all mines and stops the game.
+        // 7. Reveal history drives the reveal animation.
+        var historyGame = new MinesweeperGame(FixedGrid(10, 8));
+        Check("no reveal history initially", historyGame.LastRevealed.Count == 0);
+        historyGame.Reveal(historyGame.Cells[4 * 10 + 5]);
+        Check(
+            "reveal history records opened cells",
+            historyGame.LastRevealed.Count > 0 && historyGame.LastRevealed.All(cell => cell.IsRevealed));
+        var unopened = historyGame.Cells.First(cell => !cell.IsRevealed);
+        historyGame.ToggleFlag(unopened);
+        Check("flag clears reveal history", historyGame.LastRevealed.Count == 0);
+
+        // 8. Winning flags all mines and stops the game.
         var winGame = new MinesweeperGame(FixedGrid(10, 8));
         winGame.Reveal(winGame.Cells[3 * 10 + 3]);
         foreach (var cell in winGame.Cells.Where(cell => !cell.IsMine && !cell.IsRevealed))

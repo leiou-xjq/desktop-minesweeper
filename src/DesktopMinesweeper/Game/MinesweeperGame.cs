@@ -95,10 +95,20 @@ public sealed class MinesweeperGame
 
     public bool IsFinished => Status is GameStatus.Won or GameStatus.Lost;
 
+    private readonly List<GameCell> _lastRevealed = new();
+
+    /// <summary>
+    /// Cells uncovered by the most recent action. The renderer animates only these,
+    /// so flagging or restarting never replays the reveal effect across the board.
+    /// </summary>
+    public IReadOnlyList<GameCell> LastRevealed => _lastRevealed;
+
     public event Action? Changed;
 
     public void Restart()
     {
+        _lastRevealed.Clear();
+
         foreach (var cell in Cells)
         {
             cell.IsMine = false;
@@ -119,6 +129,7 @@ public sealed class MinesweeperGame
             return;
         }
 
+        _lastRevealed.Clear();
         cell.IsFlagged = !cell.IsFlagged;
         Changed?.Invoke();
     }
@@ -129,6 +140,8 @@ public sealed class MinesweeperGame
         {
             return;
         }
+
+        _lastRevealed.Clear();
 
         if (Status == GameStatus.Ready)
         {
@@ -187,6 +200,7 @@ public sealed class MinesweeperGame
             }
 
             cell.IsRevealed = true;
+            _lastRevealed.Add(cell);
             if (cell.AdjacentMines != 0)
             {
                 continue;
@@ -204,6 +218,7 @@ public sealed class MinesweeperGame
 
     private void Lose()
     {
+        _lastRevealed.Clear();
         Status = GameStatus.Lost;
         foreach (var cell in Cells)
         {
