@@ -1,6 +1,9 @@
 param(
     [ValidateSet('Debug', 'Release')]
-    [string]$Configuration = 'Debug'
+    [string]$Configuration = 'Debug',
+    [switch]$Probe,
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$AppArgs
 )
 $ErrorActionPreference = 'Stop'
 
@@ -11,5 +14,15 @@ if (-not (Test-Path $dotnet)) {
     if ($LASTEXITCODE -ne 0) { throw 'Failed to prepare the local .NET SDK.' }
 }
 
-& $dotnet run --project (Join-Path $root 'src\DesktopMinesweeper\DesktopMinesweeper.csproj') -c $Configuration
+$appArgsList = @()
+if ($Probe) { $appArgsList += '--probe' }
+if ($AppArgs) { $appArgsList += $AppArgs }
+
+$args = @('run', '--project', (Join-Path $root 'src\DesktopMinesweeper\DesktopMinesweeper.csproj'), '-c', $Configuration)
+if ($appArgsList.Count -gt 0) {
+    $args += '--'
+    $args += $appArgsList
+}
+
+& $dotnet @args
 exit $LASTEXITCODE

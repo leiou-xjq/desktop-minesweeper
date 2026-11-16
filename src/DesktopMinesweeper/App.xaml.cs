@@ -2,6 +2,7 @@ using System.IO;
 using System.Text;
 using System.Windows;
 using DesktopMinesweeper.Desktop;
+using DesktopMinesweeper.Safety;
 
 namespace DesktopMinesweeper;
 
@@ -10,6 +11,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        ExitGuard.Attach(this);
 
         // Diagnostic mode used by the phase-0 acceptance check. It only reads icon
         // metadata and writes a plain-text report to the path the caller supplied.
@@ -20,7 +22,8 @@ public partial class App : Application
             return;
         }
 
-        var window = new ProbeWindow();
+        var probe = e.Args.Any(arg => string.Equals(arg, "--probe", StringComparison.OrdinalIgnoreCase));
+        var window = new OverlayWindow { ProbeRequested = probe };
         window.Show();
     }
 

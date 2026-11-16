@@ -203,6 +203,40 @@ public static class DesktopSnapshotReader
         }
     }
 
+    /// <summary>
+    /// Primary monitor bounds minus the taskbar. The overlay lives here so the
+    /// taskbar stays clickable and Escape/Exit remain reachable.
+    /// </summary>
+    public static MonitorRect PrimaryWorkArea
+    {
+        get
+        {
+            var info = new NativeMethods.MONITORINFO
+            {
+                cbSize = Marshal.SizeOf<NativeMethods.MONITORINFO>()
+            };
+
+            var monitor = NativeMethods.MonitorFromPoint(
+                new NativeMethods.POINT { X = 0, Y = 0 },
+                NativeMethods.MONITOR_DEFAULTTOPRIMARY);
+
+            if (monitor != IntPtr.Zero && NativeMethods.GetMonitorInfoW(monitor, ref info))
+            {
+                return new MonitorRect(
+                    info.rcWork.Left,
+                    info.rcWork.Top,
+                    info.rcWork.Right - info.rcWork.Left,
+                    info.rcWork.Bottom - info.rcWork.Top);
+            }
+
+            return new MonitorRect(
+                0,
+                0,
+                (int)SystemParameters.WorkArea.Width,
+                (int)SystemParameters.WorkArea.Height);
+        }
+    }
+
     public static uint SystemDpi => NativeMethods.GetDpiForSystem();
 
     private static int SendGetCount(IntPtr listView)
