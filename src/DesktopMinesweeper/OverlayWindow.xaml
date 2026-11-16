@@ -118,6 +118,13 @@
                            MinWidth="46"
                            Margin="6,0,0,0"
                            VerticalAlignment="Center" />
+                <Rectangle Width="1" Height="16" Fill="#33FFFFFF" Margin="10,0" />
+                <TextBlock x:Name="StateText"
+                           Text="左键翻开 · 右键插旗"
+                           Foreground="#FFB0BEC5"
+                           VerticalAlignment="Center"
+                           MaxWidth="200"
+                           TextTrimming="CharacterEllipsis" />
                 <Button x:Name="RestartButton"
                         Content="重开  R"
                         Style="{StaticResource BarButton}"

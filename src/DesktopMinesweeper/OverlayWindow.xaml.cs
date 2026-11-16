@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Threading;
 using DesktopMinesweeper.Desktop;
 using DesktopMinesweeper.Game;
@@ -10,9 +11,9 @@ using DesktopMinesweeper.Ui;
 namespace DesktopMinesweeper;
 
 /// <summary>
-/// Borderless, per-monitor DPI aware overlay. Phase 1 draws no board yet; it only
-/// proves that a transparent topmost window can sit above the live desktop and
-/// disappear cleanly. The desktop itself is never modified.
+/// Borderless, per-monitor DPI aware overlay. The board is a projection of the
+/// desktop icon slots; the live desktop is never modified. All game state lives
+/// in <see cref="MinesweeperGame"/> and is drawn only on this transparent window.
 /// </summary>
 public partial class OverlayWindow : Window
 {
@@ -21,7 +22,7 @@ public partial class OverlayWindow : Window
     private MonitorRect _workArea;
     private int _dpi = 96;
     private bool _probeRequested;
-    private BoardGrid? _grid;
+    private MinesweeperGame? _game;
 
     public OverlayWindow()
     {
@@ -79,14 +80,24 @@ public partial class OverlayWindow : Window
         Focus();
 
         PrepareBoard();
-
-        _clock.Restart();
-        UpdateTimerText();
-        _timer.Start();
     }
 
+    /// <summary>
+    /// Reads a fresh desktop snapshot and builds a new game. Re-reading on restart
+    /// lets the board follow icon changes without ever writing to the desktop.
+    /// </summary>
     private void PrepareBoard()
     {
+        if (_game is not null)
+        {
+            _game.Changed -= OnGameChanged;
+            _game = null;
+        }
+
+        _clock.Reset();
+        _timer.Stop();
+        UpdateTimerText();
+
         var snapshot = DesktopSnapshotReader.Read();
 
         if (_probeRequested)
@@ -97,15 +108,117 @@ public partial class OverlayWindow : Window
             return;
         }
 
-        _grid = BoardGridBuilder.Build(snapshot, _workArea, _dpi, FixedGrid);
-        GridText.Text = _grid.Cells.Count.ToString();
-        ShowNotice(_grid.Notice ?? snapshot.Warning);
+        var grid = BoardGridBuilder.Build(snapshot, _workArea, _dpi, FixedGrid);
+        _game = new MinesweeperGame(grid);
+        _game.Changed += OnGameChanged;
 
-        BoardRenderer.Render(BoardCanvas, _grid, () =>
+        ShowNotice(_game.Notice ?? snapshot.Warning);
+        RenderBoard();
+    }
+
+    private void OnGameChanged()
+    {
+        if (_game is null)
         {
-            Activate();
-            Focus();
-        });
+            return;
+        }
+
+        if (_game.Status == GameStatus.Playing && !_clock.IsRunning)
+        {
+            _clock.Restart();
+            _timer.Start();
+        }
+        else if (_game.IsFinished)
+        {
+            _clock.Stop();
+            _timer.Stop();
+        }
+
+        RenderBoard();
+    }
+
+    private void RenderBoard()
+    {
+        if (_game is null)
+        {
+            return;
+        }
+
+        GridText.Text = _game.Cells.Count.ToString();
+        MinesText.Text = _game.MinesRemaining.ToString();
+
+        switch (_game.Status)
+        {
+            case GameStatus.Won:
+                StateText.Text = "全部排除 · 胜利！按 R 重开";
+                StateText.Foreground = new SolidColorBrush(Color.FromRgb(0x69, 0xF0, 0xAE));
+                break;
+            case GameStatus.Lost:
+                StateText.Text = "踩到雷了 · 按 R 重开";
+                StateText.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0x52, 0x52));
+                break;
+            default:
+                StateText.Text = "左键翻开 · 右键插旗";
+                StateText.Foreground = new SolidColorBrush(Color.FromRgb(0xB0, 0xBE, 0xC5));
+                break;
+        }
+
+        BoardRenderer.Render(
+            BoardCanvas,
+            _game,
+            cell =>
+            {
+                FocusOverlay();
+                _game.Reveal(cell);
+            },
+            cell =>
+            {
+                FocusOverlay();
+                _game.ToggleFlag(cell);
+            });
+    }
+
+    private void FocusOverlay()
+    {
+        Activate();
+        Focus();
+    }
+
+    /// <summary>
+    /// Developer-only hook for <c>--capture --demo</c>: plays a few moves so the
+    /// screenshot can show revealed numbers, flags and (optionally) a lost board.
+    /// </summary>
+    internal void PrepareCaptureDemo(bool lose)
+    {
+        if (_game is null)
+        {
+            return;
+        }
+
+        var cells = _game.Cells;
+        _game.Reveal(cells[cells.Count / 2]);
+
+        if (lose)
+        {
+            var mine = cells.FirstOrDefault(cell => cell.IsMine);
+            if (mine is not null)
+            {
+                _game.Reveal(mine);
+            }
+
+            return;
+        }
+
+        foreach (var cell in cells.Where(cell => !cell.IsMine && !cell.IsRevealed).Take(4))
+        {
+            _game.Reveal(cell);
+        }
+
+        var flagTarget = cells.FirstOrDefault(cell => !cell.IsMine && !cell.IsRevealed);
+        if (flagTarget is not null)
+        {
+            _game.ToggleFlag(flagTarget);
+        }
     }
 
     private void ShowNotice(string? message)
@@ -146,9 +259,8 @@ public partial class OverlayWindow : Window
 
     private void Restart()
     {
-        // Phase 1: reset the clock. Phase 3 will rebuild the board here.
-        _clock.Restart();
-        UpdateTimerText();
+        PrepareBoard();
+        FocusOverlay();
     }
 
     private void UpdateTimerText()

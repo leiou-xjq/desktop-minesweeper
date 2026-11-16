@@ -2,8 +2,9 @@
 
 一个轻量的 Windows 桌面小工具：把桌面图标变成扫雷格子。
 
-> **当前状态：阶段 2（图标快照与网格）。** 尚未包含扫雷玩法。
-> 已有透明覆盖层、图标锚定网格、图标副本与固定网格降级。
+> **当前状态：阶段 3（扫雷核心玩法）。**
+> 透明覆盖层、图标锚定网格、图标副本与固定网格降级均已完成，并接入布雷、首击安全、
+> 翻格、插旗、数字、胜负判定与 `R` 重开。
 > 阶段 0 的只读对齐探针保留为 `-Probe` 诊断模式。
 
 [English summary](#english-summary) · [安全边界](docs/safety.md) · [更新记录](CHANGELOG.md)
@@ -15,6 +16,7 @@
 - 读取桌面图标的位置与文本，在**透明置顶覆盖层**上绘制副本。
 - 真实桌面图标**只读**：不移动、不重命名、不隐藏、不修改。
 - 以图标槽位生成棋盘网格，每个格子显示该图标的只读副本。
+- 完整扫雷规则：左键翻开、右键插旗、数字提示、首击安全、胜负判定。
 - 图标读取失败或数量不足时，自动降级为 10×8 固定网格。
 - 状态栏提供剩余雷数、计时、重开与退出。
 - Esc 退出或进程被强制结束后，覆盖层由系统销毁，桌面保持原样。
@@ -56,24 +58,27 @@ cd desktop-minesweeper
 
 | 操作 | 功能 |
 |---|---|
+| 左键格子 | 翻开；首次点击保证安全 |
+| 右键格子 | 插旗 / 取消旗子 |
 | `Esc` | 退出并移除覆盖层（覆盖层有焦点时） |
-| `R` | 重开（阶段 1 重置计时） |
+| `R` | 重开：重新读取图标并开新局 |
 | 状态栏“退出” | 始终可用，覆盖层失焦时也可退出 |
-| 状态栏“重开” | 重置计时 |
+| 状态栏“重开” | 重新读取图标并开新局 |
 
 > 提示：点击状态栏可让覆盖层重新获得焦点，之后 `Esc` 即可生效。
+> 已翻开的格子不会被右键误标记；旗子保护下的格子不会因左键翻开。
 
-## 阶段 1 / 2 手动验收
+## 阶段 3 手动验收
 
 1. 运行 `.\run.ps1`。
 2. 桌面除图标格子和底部状态栏外应完全可见、可交互。
-3. 每个图标上应覆盖一张半透明格子，格内是该图标的只读副本（图标 + 名称）。
-4. 格子应与桌面图标槽位对齐；底部状态栏显示“格子 47”（数量随图标数变化）。
-5. 鼠标悬停格子时边框变亮、遮罩变浅。
-6. 点击格子会让覆盖层获得焦点；按 `Esc` 退出。
-7. 计时持续走动；按 `R` 或点“重开”归零。
-8. 点“退出”立即结束进程，覆盖层消失。
-9. 运行 `.\run.ps1 -Probe` 时只显示对齐描边与文本标签。
+3. 每个图标上覆盖一张半透明格子，格内是该图标的只读副本。
+4. 第一次左键点击必须安全：不会踩雷，且周围一圈（空间足够时）也没有雷。
+5. 翻开空格时自动展开相连的空白区域；有雷相邻时显示彩色数字。
+6. 右键可插旗/取消旗子；“剩余”数字随旗子数量变化。
+7. 翻开所有非雷格子时显示绿色“胜利”提示，所有雷自动插旗。
+8. 踩到雷时该格变红、所有雷显示为地雷图标，并提示按 `R` 重开。
+9. 计时从第一次翻开开始走动，胜负后停止；按 `R` 或点“重开”重新读图并归零。
 10. 退出前后桌面图标位置与名称不变；强制结束进程也同样。
 
 ### 降级验证
@@ -84,6 +89,7 @@ cd desktop-minesweeper
 
 会跳过图标读取，使用 10×8 固定网格，并在顶部显示“固定网格模式（手动）”。
 如果你桌面图标少于 12 个，或 Explorer 重启导致读取失败，也会自动进入该模式。
+固定网格同样可以正常游玩。
 
 ## 只读诊断 / 对齐探针
 
@@ -97,6 +103,16 @@ cd desktop-minesweeper
 ```powershell
 .\.dotnet\dotnet.exe .\src\DesktopMinesweeper\bin\Release\net8.0-windows\DesktopMinesweeper.dll --dump "$env:TEMP\probe.txt"
 ```
+
+### 规则自检
+
+无需点击即可验证扫雷规则（首击安全、数字、洪水展开、插旗、胜负、重开、稀疏网格）：
+
+```powershell
+.\run.ps1 -SelfTest
+```
+
+结果会打印到控制台并写入 `%TEMP%\dms-selftest.txt`。
 
 ## 技术要点
 
@@ -112,7 +128,7 @@ cd desktop-minesweeper
 - [x] 阶段 0：环境、只读探针、DPI 对齐验证
 - [x] 阶段 1：透明覆盖层骨架、状态栏、Esc/按钮退出
 - [x] 阶段 2：图标快照与图标锚定网格、固定网格降级
-- [ ] 阶段 3：扫雷核心（布雷/翻格/插旗/胜负/重开）
+- [x] 阶段 3：扫雷核心（布雷/首击安全/翻格/插旗/胜负/重开）
 - [ ] 阶段 4：踩雷抖动与所有退出路径的安全验收
 - [ ] 阶段 5：GitHub Actions 发布自包含单文件
 
@@ -136,10 +152,11 @@ Desktop Minesweeper is a lightweight Windows overlay game that turns desktop ico
 into Minesweeper cells. It **only reads** icon metadata using Win32 `LVM_GET*`
 messages and never moves, renames, hides, or modifies real desktop icons.
 
-The project is currently at **phase 2**: a transparent topmost overlay that maps
-desktop icon slots to a board grid, draws read-only icon thumbnails, and falls back
-to a fixed 10×8 grid when icon metadata is unavailable. The phase-0 alignment probe
-is still available via `-Probe`. Phase 3 will add the actual Minesweeper rules.
+The project is currently at **phase 3**: a transparent topmost overlay that maps
+desktop icon slots to a playable Minesweeper board with flood reveal, flags,
+first-click safety and win/loss detection. It falls back to a fixed 10×8 grid when
+icon metadata is unavailable. The phase-0 alignment probe is still available via
+`-Probe`, and `-SelfTest` runs the headless rules check.
 Build with `.\build.ps1`, run with `.\run.ps1`, quit with `Esc` or the Exit button.
 
 MIT licensed.

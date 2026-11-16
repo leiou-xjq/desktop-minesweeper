@@ -21,6 +21,13 @@ public partial class App : Application
 
         ExitGuard.Attach(this);
 
+        // Headless rules check; no window is created.
+        if (e.Args.Length >= 2 && e.Args[0] == "--selftest")
+        {
+            Shutdown(GameSelfTest.Run(e.Args[1]));
+            return;
+        }
+
         // Diagnostic mode used by the phase-0 acceptance check. It only reads icon
         // metadata and writes a plain-text report to the path the caller supplied.
         if (e.Args.Length >= 2 && e.Args[0] == "--dump")
@@ -30,7 +37,7 @@ public partial class App : Application
             return;
         }
 
-        // Developer-only: render the overlay, wait for it to settle, capture the
+        // Developer-only: render the overlay, optionally play demo moves, capture the
         // physical screen from this DPI-aware process, then exit.
         if (e.Args.Length >= 2 && e.Args[0] == "--capture")
         {
@@ -38,22 +45,37 @@ public partial class App : Application
             {
                 FixedGrid = e.Args.Any(arg => string.Equals(arg, "--fixed-grid", StringComparison.OrdinalIgnoreCase))
             };
+            var demo = e.Args.Any(arg => string.Equals(arg, "--demo", StringComparison.OrdinalIgnoreCase));
+            var demoLose = e.Args.Any(arg => string.Equals(arg, "--demo-lose", StringComparison.OrdinalIgnoreCase));
+
             captureWindow.Show();
-            var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
-            timer.Tick += (_, _) =>
+            var settle = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
+            settle.Tick += (_, _) =>
             {
-                timer.Stop();
-                try
+                settle.Stop();
+
+                if (demo || demoLose)
                 {
-                    DiagnosticCapture.CaptureScreen(e.Args[1], DesktopSnapshotReader.PrimaryMonitor);
+                    captureWindow.PrepareCaptureDemo(demoLose);
                 }
-                finally
+
+                var shot = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
+                shot.Tick += (_, _) =>
                 {
-                    captureWindow.Close();
-                    Shutdown(0);
-                }
+                    shot.Stop();
+                    try
+                    {
+                        DiagnosticCapture.CaptureScreen(e.Args[1], DesktopSnapshotReader.PrimaryMonitor);
+                    }
+                    finally
+                    {
+                        captureWindow.Close();
+                        Shutdown(0);
+                    }
+                };
+                shot.Start();
             };
-            timer.Start();
+            settle.Start();
             return;
         }
 

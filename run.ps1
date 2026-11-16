@@ -3,6 +3,7 @@ param(
     [string]$Configuration = 'Debug',
     [switch]$Probe,
     [switch]$FixedGrid,
+    [switch]$SelfTest,
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$AppArgs
 )
@@ -16,8 +17,14 @@ if (-not (Test-Path $dotnet)) {
 }
 
 $appArgsList = @()
+$selfTestReport = $null
 if ($Probe) { $appArgsList += '--probe' }
 if ($FixedGrid) { $appArgsList += '--fixed-grid' }
+if ($SelfTest) {
+    $selfTestReport = Join-Path $env:TEMP 'dms-selftest.txt'
+    $appArgsList += '--selftest'
+    $appArgsList += $selfTestReport
+}
 if ($AppArgs) { $appArgsList += $AppArgs }
 
 $args = @('run', '--project', (Join-Path $root 'src\DesktopMinesweeper\DesktopMinesweeper.csproj'), '-c', $Configuration)
@@ -27,4 +34,10 @@ if ($appArgsList.Count -gt 0) {
 }
 
 & $dotnet @args
-exit $LASTEXITCODE
+$code = $LASTEXITCODE
+
+if ($SelfTest -and $selfTestReport -and (Test-Path $selfTestReport)) {
+    Get-Content $selfTestReport -Encoding UTF8
+}
+
+exit $code
