@@ -11,6 +11,11 @@ on:
 permissions:
   contents: write
 
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
+
 jobs:
   build:
     runs-on: windows-latest
@@ -21,33 +26,46 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Restore
+        run: dotnet restore src/DesktopMinesweeper/DesktopMinesweeper.csproj
+
       - name: Build
-        run: dotnet build src/DesktopMinesweeper/DesktopMinesweeper.csproj -c Release
+        run: dotnet build src/DesktopMinesweeper/DesktopMinesweeper.csproj -c Release --no-restore
 
-      - name: Publish self-contained single file
-        run: >
-          dotnet publish src/DesktopMinesweeper/DesktopMinesweeper.csproj
-          -c Release -r win-x64 --self-contained true
-          -p:PublishSingleFile=true
-          -p:IncludeNativeLibrariesForSelfExtract=true
-          -p:EnableCompressionInSingleFile=true
-          -p:PublishTrimmed=false
-          -o dist/win-x64
-
-      - name: Publish framework-dependent
-        run: >
-          dotnet publish src/DesktopMinesweeper/DesktopMinesweeper.csproj
-          -c Release -r win-x64 --self-contained false
-          -p:PublishSingleFile=true
-          -o dist/win-x64-fx
-
-      - name: Create checksums
+      - name: Rules self-test
         shell: pwsh
         run: |
-          Get-ChildItem dist -Recurse -Filter *.exe | ForEach-Object {
-            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
-            "$hash  $($_.Name)" | Set-Content "$($_.FullName).sha256"
+          $report = Join-Path $env:RUNNER_TEMP 'dms-selftest.txt'
+          dotnet run --project src/DesktopMinesweeper/DesktopMinesweeper.csproj -c Release --no-build -- --selftest $report
+          $code = $LASTEXITCODE
+          Get-Content $report -Encoding UTF8
+          if ($code -ne 0) { exit $code }
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $value = $env:GITHUB_REF.Substring('refs/tags/v'.Length)
           }
+          else {
+            [xml]$project = Get-Content 'src/DesktopMinesweeper/DesktopMinesweeper.csproj'
+            $value = [string](@($project.Project.PropertyGroup.Version | Where-Object { $_ }) | Select-Object -First 1)
+          }
+          "value=$value" >> $env:GITHUB_OUTPUT
+
+      - name: Publish
+        shell: pwsh
+        run: .\publish.ps1 -Version '${{ steps.version.outputs.value }}'
+
+      - name: Verify published exe
+        shell: pwsh
+        run: |
+          $exe = Resolve-Path 'dist/win-x64/DesktopMinesweeper.exe'
+          $report = Join-Path $env:RUNNER_TEMP 'dms-published-selftest.txt'
+          $process = Start-Process -FilePath $exe -ArgumentList @('--selftest', $report) -Wait -PassThru
+          Get-Content $report -Encoding UTF8
+          if ($process.ExitCode -ne 0) { throw "published self-test failed with exit code $($process.ExitCode)" }
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -60,8 +78,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/win-x64/*.exe
-            dist/win-x64/*.sha256
-            dist/win-x64-fx/*.exe
-            dist/win-x64-fx/*.sha256
+            dist/*.zip
+            dist/*.exe
+            dist/*.sha256
           generate_release_notes: true

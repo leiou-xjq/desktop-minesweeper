@@ -20,22 +20,34 @@
 #>
 param(
     [ValidateSet('Debug', 'Release')]
-    [string]$Configuration = 'Release'
+    [string]$Configuration = 'Release',
+    # Optional explicit exe, e.g. dist\win-x64\DesktopMinesweeper.exe. When set,
+    # no project-local runtime is injected, so a self-contained build is tested
+    # exactly as an end user would run it.
+    [string]$ExePath
 )
 
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path $PSScriptRoot -Parent
-$exe = Join-Path $root "src\DesktopMinesweeper\bin\$Configuration\net8.0-windows\DesktopMinesweeper.exe"
-if (-not (Test-Path $exe)) {
-    throw "Build first: .\build.ps1 -Configuration $Configuration"
+if ($ExePath) {
+    $exe = (Resolve-Path $ExePath).Path
+}
+else {
+    $exe = Join-Path $root "src\DesktopMinesweeper\bin\$Configuration\net8.0-windows\DesktopMinesweeper.exe"
 }
 
-$dotnetRoot = Join-Path $root '.dotnet'
-if (-not (Test-Path (Join-Path $dotnetRoot 'dotnet.exe'))) {
-    throw "Local SDK missing. Run .\scripts\setup-sdk.ps1 first."
+if (-not (Test-Path $exe)) {
+    throw "Executable not found: $exe. Build first: .\build.ps1 -Configuration $Configuration"
 }
-$env:DOTNET_ROOT_X64 = $dotnetRoot
+
+if (-not $ExePath) {
+    $dotnetRoot = Join-Path $root '.dotnet'
+    if (-not (Test-Path (Join-Path $dotnetRoot 'dotnet.exe'))) {
+        throw "Local SDK missing. Run .\scripts\setup-sdk.ps1 first."
+    }
+    $env:DOTNET_ROOT_X64 = $dotnetRoot
+}
 
 Add-Type -TypeDefinition @'
 using System;

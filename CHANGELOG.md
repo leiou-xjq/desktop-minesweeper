@@ -2,6 +2,21 @@
 
 所有重要变更记录在此文件。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [1.0.0] - 2026-11-16
+
+### Added
+
+- `publish.ps1`：一键产出发布资产（自包含单文件 exe、依赖运行时 exe、zip、SHA-256）。
+- 自包含单文件发布（`win-x64`，单文件 + 压缩 + 原生库自解压），无需安装 .NET。
+- 版本化发布文件名，避免两种 exe 与校验文件同名冲突。
+- GitHub Actions：构建、规则自检、发布校验、tag 触发 GitHub Release，并上传构建产物。
+- README 新增下载使用、SmartScreen 与 SHA-256 校验说明。
+
+### Fixed
+
+- 规则自检中的随机性断言：稀疏棋盘首击可能直接获胜，现接受“进行中或胜利”。
+- `publish.ps1` 参数拼接与框架依赖单文件压缩选项（NETSDK1176）。
+
 ## [0.5.0] - 2026-11-16
 
 ### Added

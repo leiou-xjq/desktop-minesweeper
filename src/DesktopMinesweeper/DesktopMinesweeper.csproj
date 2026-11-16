@@ -11,7 +11,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>DesktopMinesweeper</AssemblyName>
     <RootNamespace>DesktopMinesweeper</RootNamespace>
-    <Version>0.5.0</Version>
+    <Version>1.0.0</Version>
     <Description>Desktop Minesweeper - a read-only transparent overlay game for Windows.</Description>
   </PropertyGroup>
 

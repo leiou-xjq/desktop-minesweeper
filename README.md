@@ -2,10 +2,9 @@
 
 一个轻量的 Windows 桌面小工具：把桌面图标变成扫雷格子。
 
-> **当前状态：阶段 4（踩雷反馈与退出安全）。**
-> 透明覆盖层、图标锚定网格、固定网格降级、完整扫雷规则均已完成；
-> 踩雷时只有覆盖层上的副本抖动/闪烁，真实图标不动。
-> 所有退出路径已通过自动化脚本验收。
+> **当前状态：1.0.0 发布就绪（阶段 5 完成）。**
+> 透明覆盖层、图标锚定网格、固定网格降级、完整扫雷规则、踩雷反馈与退出安全均已完成。
+> 提供自包含单文件 exe（无需安装 .NET）、zip 包与 SHA-256 校验。
 > 阶段 0 的只读对齐探针保留为 `-Probe` 诊断模式。
 
 [English summary](#english-summary) · [安全边界](docs/safety.md) · [更新记录](CHANGELOG.md)
@@ -37,8 +36,23 @@
 ## 系统要求
 
 - Windows 10 1809+ / Windows 11，x64
-- 运行发布版：无需安装 .NET（自包含版本）
+- 运行发布版：无需安装 .NET（自包含单文件）
 - 从源码构建：见下节，本地脚本会自动准备项目内 .NET 8 SDK
+
+## 下载使用（推荐）
+
+1. 打开 [Releases](https://github.com/leiou-xjq/desktop-minesweeper/releases)。
+2. 下载 `DesktopMinesweeper-<版本>-win-x64.zip`（或直接下载 `.exe`）。
+3. 解压后双击 `DesktopMinesweeper.exe` 即可游玩；也可直接运行单文件 exe。
+
+说明：
+
+- 自包含单文件约 68 MB，内含 .NET 运行时；首次启动会由 .NET 在 `%TEMP%` 下
+  解压原生库，不写注册表、不请求管理员权限。
+- 可选的 `-win-x64-fx.exe` 体积约 0.2 MB，需要系统已安装 .NET 8 Desktop Runtime。
+- 程序未做代码签名，Windows SmartScreen 可能提示“未知发布者”；可选择“更多信息 → 仍要运行”。
+- 校验下载：`Get-FileHash .\DesktopMinesweeper-1.0.0-win-x64.zip -Algorithm SHA256`
+  与同目录 `.sha256` 文件中的值比较。
 
 ## 从源码构建（无需管理员权限）
 
@@ -49,6 +63,21 @@ cd desktop-minesweeper
 .\build.ps1                 # Release 构建
 .\run.ps1                   # 启动
 ```
+
+制作发布包：
+
+```powershell
+.\publish.ps1
+```
+
+输出到 `.\dist`：
+
+- `DesktopMinesweeper-<版本>-win-x64.zip`（自包含 exe + LICENSE + README）
+- `DesktopMinesweeper-<版本>-win-x64.exe`（自包含单文件）
+- `DesktopMinesweeper-<版本>-win-x64-fx.exe`（依赖 .NET 8 Desktop Runtime）
+- 对应的 `.sha256` 校验文件
+
+推送 `v*` 标签时，GitHub Actions 会自动构建、运行规则自检、发布这些资产。
 
 也可以手动：
 
@@ -143,7 +172,7 @@ cd desktop-minesweeper
 - [x] 阶段 2：图标快照与图标锚定网格、固定网格降级
 - [x] 阶段 3：扫雷核心（布雷/首击安全/翻格/插旗/胜负/重开）
 - [x] 阶段 4：踩雷抖动/闪烁与所有退出路径的安全验收
-- [ ] 阶段 5：GitHub Actions 发布自包含单文件
+- [x] 阶段 5：自包含单文件发布、zip/校验和与 GitHub Actions 发布流程
 
 ## 已知限制
 
@@ -152,6 +181,8 @@ cd desktop-minesweeper
 - `Esc` 仅在覆盖层拥有焦点时生效；失焦时请点击状态栏或使用“退出”按钮。
 - Explorer 重启后，本次游戏的图标快照不会自动更新，重开游戏即可。
 - 首次运行需要允许程序读取桌面窗口信息；安全软件可能对跨进程读取产生提示。
+- 单文件版首次启动会把原生库解压到 `%TEMP%`（.NET 单文件机制），不会写入注册表。
+- 可执行文件未签名，SmartScreen 可能提示未知发布者；请核对 SHA-256 后再运行。
 
 ## 许可证
 
@@ -165,13 +196,17 @@ Desktop Minesweeper is a lightweight Windows overlay game that turns desktop ico
 into Minesweeper cells. It **only reads** icon metadata using Win32 `LVM_GET*`
 messages and never moves, renames, hides, or modifies real desktop icons.
 
-The project is currently at **phase 4**: a transparent topmost overlay that maps
-desktop icon slots to a playable Minesweeper board with flood reveal, flags,
-first-click safety, win/loss detection, and cosmetic-only shake/pulse feedback.
-It falls back to a fixed 10×8 grid when icon metadata is unavailable. The phase-0
-alignment probe is still available via `-Probe`, `-SelfTest` runs the headless rules
-check, and `scripts/verify-exit-safety.ps1` validates every exit path against a
-before/after icon dump.
-Build with `.\build.ps1`, run with `.\run.ps1`, quit with `Esc` or the Exit button.
+The project is at **1.0.0**: a transparent topmost overlay that maps desktop icon
+slots to a playable Minesweeper board with flood reveal, flags, first-click safety,
+win/loss detection, and cosmetic-only shake/pulse feedback. It falls back to a fixed
+10×8 grid when icon metadata is unavailable. The phase-0 alignment probe is still
+available via `-Probe`, `-SelfTest` runs the headless rules check, and
+`scripts/verify-exit-safety.ps1` validates every exit path against a before/after
+icon dump.
+
+Releases are self-contained single-file Windows x64 builds (no .NET install needed),
+published as a zip with SHA-256 checksums; tags push them to GitHub Releases.
+Build with `.\build.ps1`, package with `.\publish.ps1`, run with `.\run.ps1`,
+quit with `Esc` or the Exit button.
 
 MIT licensed.

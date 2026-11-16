@@ -42,7 +42,7 @@ internal static class GameSelfTest
         // 2. First click safety (centre).
         var first = game.Cells[4 * 10 + 5];
         game.Reveal(first);
-        Check("first click starts the game", game.Status == GameStatus.Playing);
+        Check("first click starts the game", game.Status is GameStatus.Playing or GameStatus.Won, game.Status.ToString());
         Check("first click is safe", !first.IsMine && first.IsRevealed);
         Check("first click neighbours are safe", Neighbours(game, first).All(cell => !cell.IsMine));
         Check("mines were placed", game.Cells.Count(cell => cell.IsMine) == game.MineCount);
@@ -118,7 +118,7 @@ internal static class GameSelfTest
         // 10. Sparse icon slots still playable.
         var sparseGame = new MinesweeperGame(SparseGrid());
         sparseGame.Reveal(sparseGame.Cells[sparseGame.Cells.Count / 2]);
-        Check("sparse board starts", sparseGame.Status == GameStatus.Playing);
+        Check("sparse board starts", sparseGame.Status is GameStatus.Playing or GameStatus.Won, sparseGame.Status.ToString());
         Check("sparse board placed mines", sparseGame.Cells.Count(cell => cell.IsMine) == sparseGame.MineCount);
         Check("sparse first click is safe", !sparseGame.Cells[sparseGame.Cells.Count / 2].IsMine);
 
