@@ -2,6 +2,7 @@ param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Debug',
     [switch]$Probe,
+    [switch]$FixedGrid,
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$AppArgs
 )
@@ -16,6 +17,7 @@ if (-not (Test-Path $dotnet)) {
 
 $appArgsList = @()
 if ($Probe) { $appArgsList += '--probe' }
+if ($FixedGrid) { $appArgsList += '--fixed-grid' }
 if ($AppArgs) { $appArgsList += $AppArgs }
 
 $args = @('run', '--project', (Join-Path $root 'src\DesktopMinesweeper\DesktopMinesweeper.csproj'), '-c', $Configuration)

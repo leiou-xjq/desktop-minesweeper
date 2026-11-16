@@ -18,7 +18,8 @@ public sealed record DesktopIconInfo(
     int ClientY,
     int ScreenX,
     int ScreenY,
-    string Text);
+    string Text,
+    PixelRect IconRect);
 
 public sealed record DesktopSnapshot(
     IntPtr ListViewHandle,
@@ -51,6 +52,7 @@ public static class DesktopSnapshotReader
     private const int LvItemOffset = 0;
     private const int PointOffset = 512;
     private const int TextOffset = 1024;
+    private const int RectOffset = 2048;
     private const int TextCapacityChars = 512;
     private const uint MessageTimeoutMs = 1000;
 
@@ -134,6 +136,9 @@ public static class DesktopSnapshotReader
                 }
 
                 var text = TryReadText(process, remote, listView, i);
+                var fallbackIcon = Math.Max(1, 48 * dpi / 96);
+                var iconRect = TryReadIconRect(process, remote, listView, i)
+                    ?? new PixelRect(point.X, point.Y, point.X + fallbackIcon, point.Y + fallbackIcon);
 
                 icons.Add(new DesktopIconInfo(
                     i,
@@ -141,7 +146,8 @@ public static class DesktopSnapshotReader
                     point.Y,
                     listRect.Left + point.X,
                     listRect.Top + point.Y,
-                    text));
+                    text,
+                    iconRect));
             }
 
             if (count > limit)
@@ -311,6 +317,33 @@ public static class DesktopSnapshotReader
         }
 
         return ReadStruct(process, pointAddress, out point);
+    }
+
+    private static PixelRect? TryReadIconRect(IntPtr process, IntPtr remote, IntPtr listView, int index)
+    {
+        var address = IntPtr.Add(remote, RectOffset);
+        var request = new NativeMethods.RECT { Left = NativeMethods.LVIR_ICON };
+        if (!WriteStruct(process, address, request))
+        {
+            return null;
+        }
+
+        if (!Send(listView, NativeMethods.LVM_GETITEMRECT, new IntPtr(index), address, out _))
+        {
+            return null;
+        }
+
+        if (!ReadStruct<NativeMethods.RECT>(process, address, out var rect))
+        {
+            return null;
+        }
+
+        if (rect.Right <= rect.Left || rect.Bottom <= rect.Top)
+        {
+            return null;
+        }
+
+        return new PixelRect(rect.Left, rect.Top, rect.Right, rect.Bottom);
     }
 
     private static string TryReadText(IntPtr process, IntPtr remote, IntPtr listView, int index)

@@ -11,8 +11,12 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>DesktopMinesweeper</AssemblyName>
     <RootNamespace>DesktopMinesweeper</RootNamespace>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <Description>Desktop Minesweeper - a read-only transparent overlay game for Windows.</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+  </ItemGroup>
 
 </Project>

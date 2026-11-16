@@ -2,9 +2,9 @@
 
 一个轻量的 Windows 桌面小工具：把桌面图标变成扫雷格子。
 
-> **当前状态：阶段 1（透明覆盖层骨架）。** 尚未包含扫雷玩法。
-> 阶段 0 的只读图标探针保留为 `-Probe` 诊断模式。
-> 阶段 1 验证透明置顶覆盖层、状态栏、计时、重开/退出与安全清理。
+> **当前状态：阶段 2（图标快照与网格）。** 尚未包含扫雷玩法。
+> 已有透明覆盖层、图标锚定网格、图标副本与固定网格降级。
+> 阶段 0 的只读对齐探针保留为 `-Probe` 诊断模式。
 
 [English summary](#english-summary) · [安全边界](docs/safety.md) · [更新记录](CHANGELOG.md)
 
@@ -14,9 +14,10 @@
 
 - 读取桌面图标的位置与文本，在**透明置顶覆盖层**上绘制副本。
 - 真实桌面图标**只读**：不移动、不重命名、不隐藏、不修改。
+- 以图标槽位生成棋盘网格，每个格子显示该图标的只读副本。
+- 图标读取失败或数量不足时，自动降级为 10×8 固定网格。
 - 状态栏提供剩余雷数、计时、重开与退出。
 - Esc 退出或进程被强制结束后，覆盖层由系统销毁，桌面保持原样。
-- 读取失败时自动降级，不影响桌面使用。
 
 ## 安全承诺
 
@@ -62,15 +63,27 @@ cd desktop-minesweeper
 
 > 提示：点击状态栏可让覆盖层重新获得焦点，之后 `Esc` 即可生效。
 
-## 阶段 1 手动验收
+## 阶段 1 / 2 手动验收
 
 1. 运行 `.\run.ps1`。
-2. 桌面除底部状态栏外应完全可见、可交互，没有全屏变暗或黑屏。
-3. 状态栏显示“剩余 —”、计时 `00:00`、重开/退出按钮。
-4. 计时会持续走动；按 `R` 或点“重开”，计时归零。
-5. 按 `Esc` 或点“退出”，覆盖层立即消失，进程结束。
-6. 再次运行，用任务管理器强制结束 `dotnet.exe`，覆盖层同样消失。
-7. 退出前后桌面图标位置与名称不变。
+2. 桌面除图标格子和底部状态栏外应完全可见、可交互。
+3. 每个图标上应覆盖一张半透明格子，格内是该图标的只读副本（图标 + 名称）。
+4. 格子应与桌面图标槽位对齐；底部状态栏显示“格子 47”（数量随图标数变化）。
+5. 鼠标悬停格子时边框变亮、遮罩变浅。
+6. 点击格子会让覆盖层获得焦点；按 `Esc` 退出。
+7. 计时持续走动；按 `R` 或点“重开”归零。
+8. 点“退出”立即结束进程，覆盖层消失。
+9. 运行 `.\run.ps1 -Probe` 时只显示对齐描边与文本标签。
+10. 退出前后桌面图标位置与名称不变；强制结束进程也同样。
+
+### 降级验证
+
+```powershell
+.\run.ps1 -FixedGrid
+```
+
+会跳过图标读取，使用 10×8 固定网格，并在顶部显示“固定网格模式（手动）”。
+如果你桌面图标少于 12 个，或 Explorer 重启导致读取失败，也会自动进入该模式。
 
 ## 只读诊断 / 对齐探针
 
@@ -98,7 +111,7 @@ cd desktop-minesweeper
 
 - [x] 阶段 0：环境、只读探针、DPI 对齐验证
 - [x] 阶段 1：透明覆盖层骨架、状态栏、Esc/按钮退出
-- [ ] 阶段 2：图标快照与图标锚定网格、降级策略
+- [x] 阶段 2：图标快照与图标锚定网格、固定网格降级
 - [ ] 阶段 3：扫雷核心（布雷/翻格/插旗/胜负/重开）
 - [ ] 阶段 4：踩雷抖动与所有退出路径的安全验收
 - [ ] 阶段 5：GitHub Actions 发布自包含单文件
@@ -106,6 +119,7 @@ cd desktop-minesweeper
 ## 已知限制
 
 - 独占全屏游戏之上不会显示覆盖层。
+- 当前网格只覆盖主显示器；其他显示器上的图标不会参与游戏（不会崩溃）。
 - `Esc` 仅在覆盖层拥有焦点时生效；失焦时请点击状态栏或使用“退出”按钮。
 - Explorer 重启后，本次游戏的图标快照不会自动更新，重开游戏即可。
 - 首次运行需要允许程序读取桌面窗口信息；安全软件可能对跨进程读取产生提示。
@@ -122,9 +136,10 @@ Desktop Minesweeper is a lightweight Windows overlay game that turns desktop ico
 into Minesweeper cells. It **only reads** icon metadata using Win32 `LVM_GET*`
 messages and never moves, renames, hides, or modifies real desktop icons.
 
-The project is currently at **phase 1**: a transparent topmost overlay with a status
-bar, timer, restart and exit controls. The phase-0 read-only alignment probe is still
-available via `-Probe`. Icon discovery, DPI mapping and safe exit paths are validated.
+The project is currently at **phase 2**: a transparent topmost overlay that maps
+desktop icon slots to a board grid, draws read-only icon thumbnails, and falls back
+to a fixed 10×8 grid when icon metadata is unavailable. The phase-0 alignment probe
+is still available via `-Probe`. Phase 3 will add the actual Minesweeper rules.
 Build with `.\build.ps1`, run with `.\run.ps1`, quit with `Esc` or the Exit button.
 
 MIT licensed.

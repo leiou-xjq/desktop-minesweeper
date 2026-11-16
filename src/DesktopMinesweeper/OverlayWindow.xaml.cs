@@ -4,6 +4,8 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
 using DesktopMinesweeper.Desktop;
+using DesktopMinesweeper.Game;
+using DesktopMinesweeper.Ui;
 
 namespace DesktopMinesweeper;
 
@@ -19,6 +21,7 @@ public partial class OverlayWindow : Window
     private MonitorRect _workArea;
     private int _dpi = 96;
     private bool _probeRequested;
+    private BoardGrid? _grid;
 
     public OverlayWindow()
     {
@@ -41,6 +44,8 @@ public partial class OverlayWindow : Window
         get => _probeRequested;
         set => _probeRequested = value;
     }
+
+    public bool FixedGrid { get; set; }
 
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
@@ -73,16 +78,46 @@ public partial class OverlayWindow : Window
         Activate();
         Focus();
 
+        PrepareBoard();
+
         _clock.Restart();
         UpdateTimerText();
         _timer.Start();
+    }
+
+    private void PrepareBoard()
+    {
+        var snapshot = DesktopSnapshotReader.Read();
 
         if (_probeRequested)
         {
-            var snapshot = DesktopSnapshotReader.Read();
             ProbeLayer.Render(ProbeCanvas, snapshot, _workArea, _dpi);
-            MinesText.Text = snapshot.Count.ToString();
+            GridText.Text = snapshot.Count.ToString();
+            ShowNotice(snapshot.Warning);
+            return;
         }
+
+        _grid = BoardGridBuilder.Build(snapshot, _workArea, _dpi, FixedGrid);
+        GridText.Text = _grid.Cells.Count.ToString();
+        ShowNotice(_grid.Notice ?? snapshot.Warning);
+
+        BoardRenderer.Render(BoardCanvas, _grid, () =>
+        {
+            Activate();
+            Focus();
+        });
+    }
+
+    private void ShowNotice(string? message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            NoticeBadge.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        NoticeText.Text = message;
+        NoticeBadge.Visibility = Visibility.Visible;
     }
 
     private void OnClosed(object? sender, EventArgs e)

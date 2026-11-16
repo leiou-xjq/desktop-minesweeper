@@ -13,10 +13,12 @@ internal static class NativeMethods
     public const uint LVM_FIRST = 0x1000;
     public const uint LVM_GETITEMCOUNT = LVM_FIRST + 4;
     public const uint LVM_GETITEMPOSITION = LVM_FIRST + 16;
+    public const uint LVM_GETITEMRECT = LVM_FIRST + 14;
     public const uint LVM_GETITEMSPACING = LVM_FIRST + 51;
     public const uint LVM_GETITEMTEXTW = LVM_FIRST + 115;
 
     public const uint LVIF_TEXT = 0x0001;
+    public const int LVIR_ICON = 0;
     public const uint SMTO_BLOCK = 0x0001;
     public const uint SMTO_ABORTIFHUNG = 0x0002;
 
@@ -38,6 +40,8 @@ internal static class NativeMethods
     public const int GWL_EXSTYLE = -20;
     public const long WS_EX_TOOLWINDOW = 0x00000080;
     public const long WS_EX_NOACTIVATE = 0x08000000;
+
+    public static readonly IntPtr DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = new(-4);
 
     public static readonly IntPtr HWND_TOPMOST = new(-1);
 
@@ -120,6 +124,10 @@ internal static class NativeMethods
 
     [DllImport("user32.dll", SetLastError = true)]
     public static extern uint GetDpiForWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool SetProcessDpiAwarenessContext(IntPtr dpiContext);
 
     [DllImport("user32.dll", SetLastError = true)]
     public static extern uint GetDpiForSystem();
