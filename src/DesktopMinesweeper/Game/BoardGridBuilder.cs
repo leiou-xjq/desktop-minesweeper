@@ -75,8 +75,8 @@ public static class BoardGridBuilder
         var notice = forceFixedGrid
             ? "固定网格模式（手动）"
             : snapshot.Icons.Count == 0
-                ? "图标读取不可用 · 固定网格"
-                : $"可用图标不足 {MinimumIconCells} 个 · 固定网格";
+                ? "图标读取不可�?· 固定网格"
+                : $"可用图标不足 {MinimumIconCells} �?· 固定网格";
 
         return BuildFixed(workArea, scale, notice);
     }
@@ -160,7 +160,7 @@ public static class BoardGridBuilder
 
             // Frosted backdrop used while the cell is covered: the live icon is
             // readable as a silhouette but the cell still reads as glass.
-            var glass = DesktopBitmapCapture.BlurAndDarken(thumbnail, 8, 0.55);
+            var glass = DesktopBitmapCapture.BlurAndDarken(thumbnail, 6, 0.8);
 
             var iconOffsetX = padX * scale;
             var iconOffsetY = (icon.IconRect.Top - icon.ClientY) * scale;

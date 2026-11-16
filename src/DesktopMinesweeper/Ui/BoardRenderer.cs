@@ -10,41 +10,52 @@ using DesktopMinesweeper.Game;
 namespace DesktopMinesweeper.Ui;
 
 /// <summary>
-/// Draws the board on the transparent overlay. Every visual here is a copy; the
-/// real desktop icons underneath are never touched.
+/// Draws the glass board on the transparent overlay. Everything here is a copy of
+/// the desktop captured at startup; real icons are never touched.
 /// </summary>
 internal static class BoardRenderer
 {
-    private static readonly Brush ScrimFill = new SolidColorBrush(Color.FromArgb(0x8C, 0x08, 0x0B, 0x0E));
-    private static readonly Brush HoverScrimFill = new SolidColorBrush(Color.FromArgb(0x4D, 0x08, 0x0B, 0x0E));
-    private static readonly Brush ClearedScrim = new SolidColorBrush(Color.FromArgb(0x14, 0xE8, 0xFF, 0xFF));
-    private static readonly Brush FallbackFill = new SolidColorBrush(Color.FromArgb(0x66, 0x10, 0x14, 0x18));
-    private static readonly Brush HoverFallbackFill = new SolidColorBrush(Color.FromArgb(0x99, 0x10, 0x14, 0x18));
-    private static readonly Brush ClearedFallback = new SolidColorBrush(Color.FromArgb(0x33, 0xE8, 0xFF, 0xFF));
-    private static readonly Brush NormalBorder = new SolidColorBrush(Color.FromArgb(0x59, 0x00, 0xE5, 0xFF));
-    private static readonly Brush HoverBorder = new SolidColorBrush(Color.FromArgb(0xE6, 0x00, 0xE5, 0xFF));
-    private static readonly Brush ClearedBorder = new SolidColorBrush(Color.FromArgb(0x80, 0x69, 0xF0, 0xAE));
-    private static readonly Brush MineScrim = new SolidColorBrush(Color.FromArgb(0xB4, 0x7A, 0x1F, 0x1F));
-    private static readonly Brush ExplodedScrim = new SolidColorBrush(Color.FromArgb(0xE0, 0xC6, 0x28, 0x28));
-    private static readonly Brush ExplodedBorder = new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0x52, 0x52));
-    private static readonly Brush GlyphDark = new SolidColorBrush(Color.FromArgb(0xFF, 0x08, 0x0B, 0x0E));
-    private static readonly Brush GlyphLight = new SolidColorBrush(Color.FromArgb(0xFF, 0xE8, 0xF6, 0xF8));
-    private static readonly Brush FlagBrush = new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0xC2, 0x66));
-    private static readonly Brush BadgeFill = new SolidColorBrush(Color.FromArgb(0xE0, 0x08, 0x0B, 0x0E));
-    private static readonly Brush LabelFill = new SolidColorBrush(Color.FromArgb(0xB4, 0x00, 0x00, 0x00));
-    private static readonly Brush LabelText = new SolidColorBrush(Color.FromRgb(0xE0, 0xF7, 0xFA));
+    private static readonly FontFamily UiFont = new("Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI");
+    private static readonly FontFamily NumberFont = new("Cascadia Mono, Consolas");
+
+    private static readonly Brush GlassOverlay = Gradient(
+        Color.FromArgb(0x66, 0x0C, 0x14, 0x1B),
+        Color.FromArgb(0xA6, 0x08, 0x0D, 0x12));
+    private static readonly Brush FallbackGlass = Gradient(
+        Color.FromArgb(0x59, 0x10, 0x1A, 0x22),
+        Color.FromArgb(0x99, 0x08, 0x0D, 0x12));
+    private static readonly Brush RevealedWash = Brush(0x1A, 0xF2, 0xFF, 0xFF);
+    private static readonly Brush HoverSheen = Gradient(
+        Color.FromArgb(0x1A, 0xFF, 0xFF, 0xFF),
+        Color.FromArgb(0x05, 0xFF, 0xFF, 0xFF));
+    private static readonly Brush NormalBorder = Brush(0x33, 0xFF, 0xFF, 0xFF);
+    private static readonly Brush HoverBorder = Brush(0x66, 0xE5, 0xFF, 0xF7);
+    private static readonly Brush ClearedBorder = Brush(0x4D, 0x5E, 0xEA, 0xD4);
+    private static readonly Brush TopHighlight = Brush(0x4D, 0xFF, 0xFF, 0xFF);
+    private static readonly Brush BottomShadow = Brush(0x40, 0x00, 0x00, 0x00);
+    private static readonly Brush BadgeFill = Brush(0xD9, 0x0A, 0x10, 0x15);
+    private static readonly Brush BadgeBorder = Brush(0x40, 0xFF, 0xFF, 0xFF);
+    private static readonly Brush FlagBrush = Brush(0xFF, 0xFB, 0xBF, 0x24);
+    private static readonly Brush FlagBadgeBorder = Brush(0x66, 0xFB, 0xBF, 0x24);
+    private static readonly Brush MineScrim = Brush(0xA6, 0x7A, 0x1F, 0x1F);
+    private static readonly Brush ExplodedScrim = Brush(0xE0, 0xC6, 0x28, 0x28);
+    private static readonly Brush ExplodedBorder = Brush(0xFF, 0xFF, 0x52, 0x52);
+    private static readonly Brush GlyphDark = Brush(0xFF, 0x08, 0x0B, 0x0E);
+    private static readonly Brush GlyphLight = Brush(0xFF, 0xE8, 0xF6, 0xF8);
+    private static readonly Brush LabelFill = Brush(0xB4, 0x00, 0x00, 0x00);
+    private static readonly Brush LabelText = Brush(0xFF, 0xE0, 0xF7, 0xFA);
 
     private static readonly Brush[] NumberBrushes =
     {
         Brushes.White,
-        new SolidColorBrush(Color.FromRgb(0x6F, 0xB7, 0xFF)),
-        new SolidColorBrush(Color.FromRgb(0x7B, 0xE3, 0x8A)),
-        new SolidColorBrush(Color.FromRgb(0xFF, 0x7B, 0x7B)),
-        new SolidColorBrush(Color.FromRgb(0xC3, 0x9B, 0xFF)),
-        new SolidColorBrush(Color.FromRgb(0xFF, 0xC2, 0x66)),
-        new SolidColorBrush(Color.FromRgb(0x66, 0xE0, 0xD6)),
-        new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0)),
-        new SolidColorBrush(Color.FromRgb(0xBD, 0xBD, 0xBD))
+        Brush(0xFF, 0x6F, 0xB7, 0xFF),
+        Brush(0xFF, 0x7B, 0xE3, 0x8A),
+        Brush(0xFF, 0xFF, 0x7B, 0x7B),
+        Brush(0xFF, 0xC3, 0x9B, 0xFF),
+        Brush(0xFF, 0xFF, 0xC2, 0x66),
+        Brush(0xFF, 0x66, 0xE0, 0xD6),
+        Brush(0xFF, 0xE0, 0xE0, 0xE0),
+        Brush(0xFF, 0xBD, 0xBD, 0xBD)
     };
 
     public static void Render(
@@ -59,14 +70,15 @@ internal static class BoardRenderer
         {
             var visual = cell.Visual;
             var interactive = !game.IsFinished && !cell.IsRevealed;
+            var revealedMine = cell.IsRevealed && cell.IsMine;
 
             var tile = new Border
             {
                 Width = visual.Width,
                 Height = visual.Height,
-                CornerRadius = new CornerRadius(6),
-                Background = FallbackFill,
-                BorderBrush = NormalBorder,
+                CornerRadius = new CornerRadius(10),
+                Background = Brushes.Transparent,
+                BorderBrush = revealedMine && cell.Exploded ? ExplodedBorder : cell.IsRevealed ? ClearedBorder : NormalBorder,
                 BorderThickness = new Thickness(1),
                 ClipToBounds = true,
                 Cursor = interactive ? Cursors.Hand : Cursors.Arrow,
@@ -75,35 +87,60 @@ internal static class BoardRenderer
 
             var content = new Grid();
 
-            if (visual.Thumbnail is BitmapSource thumbnail)
+            var backdropSource = cell.IsRevealed
+                ? visual.Thumbnail
+                : visual.GlassThumbnail ?? visual.Thumbnail;
+            if (backdropSource is BitmapSource backdrop)
             {
                 content.Children.Add(new Image
                 {
-                    Source = thumbnail,
+                    Source = backdrop,
                     Stretch = Stretch.Fill,
                     IsHitTestVisible = false,
                     SnapsToDevicePixels = true
                 });
             }
 
-            var scrim = new Rectangle { IsHitTestVisible = false };
-            content.Children.Add(scrim);
-
-            var baseScrim = ScrimFill;
-            var baseBorder = NormalBorder;
-            var baseBackground = FallbackFill;
-
-            if (cell.IsRevealed && cell.IsMine)
+            Rectangle? mineScrim = null;
+            if (revealedMine)
             {
-                baseScrim = cell.Exploded ? ExplodedScrim : MineScrim;
-                baseBorder = cell.Exploded ? ExplodedBorder : NormalBorder;
+                mineScrim = new Rectangle
+                {
+                    Fill = cell.Exploded ? ExplodedScrim : MineScrim,
+                    IsHitTestVisible = false
+                };
+                content.Children.Add(mineScrim);
+            }
+            else if (cell.IsRevealed)
+            {
+                content.Children.Add(new Rectangle { Fill = RevealedWash, IsHitTestVisible = false });
+            }
+            else
+            {
+                content.Children.Add(new Rectangle
+                {
+                    Fill = backdropSource is null ? FallbackGlass : GlassOverlay,
+                    IsHitTestVisible = false
+                });
+            }
+
+            var sheen = new Rectangle
+            {
+                Fill = HoverSheen,
+                Opacity = 0,
+                IsHitTestVisible = false
+            };
+            if (interactive)
+            {
+                content.Children.Add(sheen);
+            }
+
+            if (revealedMine)
+            {
                 content.Children.Add(CreateMineGlyph());
             }
             else if (cell.IsRevealed)
             {
-                baseScrim = ClearedScrim;
-                baseBorder = ClearedBorder;
-                baseBackground = ClearedFallback;
                 if (cell.AdjacentMines > 0)
                 {
                     content.Children.Add(CreateNumberBadge(cell.AdjacentMines));
@@ -111,16 +148,16 @@ internal static class BoardRenderer
             }
             else if (cell.IsFlagged)
             {
-                content.Children.Add(CreateFlagGlyph());
+                content.Children.Add(CreateFlagBadge());
             }
 
-            if (visual.Thumbnail is null && !string.IsNullOrWhiteSpace(visual.Text))
+            if (backdropSource is null && !string.IsNullOrWhiteSpace(visual.Text))
             {
                 content.Children.Add(new TextBlock
                 {
                     Text = visual.Text,
+                    FontFamily = UiFont,
                     FontSize = 10.5,
-                    FontFamily = new FontFamily("Segoe UI, Microsoft YaHei UI"),
                     Foreground = LabelText,
                     Background = LabelFill,
                     Padding = new Thickness(2, 0, 2, 0),
@@ -131,30 +168,43 @@ internal static class BoardRenderer
                 });
             }
 
-            scrim.Fill = baseScrim;
-            tile.BorderBrush = baseBorder;
-            tile.Background = baseBackground;
-            tile.Child = content;
+            content.Children.Add(new Rectangle
+            {
+                Height = 1,
+                Fill = TopHighlight,
+                VerticalAlignment = VerticalAlignment.Top,
+                IsHitTestVisible = false
+            });
+            content.Children.Add(new Rectangle
+            {
+                Height = 1,
+                Fill = BottomShadow,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                IsHitTestVisible = false
+            });
 
             if (interactive)
             {
+                var hoverRing = new Border
+                {
+                    BorderBrush = HoverBorder,
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(10),
+                    Background = Brushes.Transparent,
+                    Opacity = 0,
+                    IsHitTestVisible = false
+                };
+                content.Children.Add(hoverRing);
+
                 tile.MouseEnter += (_, _) =>
                 {
-                    tile.BorderBrush = HoverBorder;
-                    if (visual.Thumbnail is not null)
-                    {
-                        scrim.Fill = HoverScrimFill;
-                    }
-                    else
-                    {
-                        tile.Background = HoverFallbackFill;
-                    }
+                    AnimateOpacity(sheen, 1, 150);
+                    AnimateOpacity(hoverRing, 1, 150);
                 };
                 tile.MouseLeave += (_, _) =>
                 {
-                    tile.BorderBrush = baseBorder;
-                    scrim.Fill = baseScrim;
-                    tile.Background = baseBackground;
+                    AnimateOpacity(sheen, 0, 150);
+                    AnimateOpacity(hoverRing, 0, 150);
                 };
                 tile.MouseLeftButtonDown += (_, args) =>
                 {
@@ -162,6 +212,7 @@ internal static class BoardRenderer
                     {
                         onReveal(cell);
                     }
+
                     args.Handled = true;
                 };
                 tile.MouseRightButtonDown += (_, args) =>
@@ -171,33 +222,58 @@ internal static class BoardRenderer
                 };
             }
 
+            tile.Child = content;
+
             Canvas.SetLeft(tile, visual.X);
             Canvas.SetTop(tile, visual.Y);
             canvas.Children.Add(tile);
 
+            if (game.LastRevealed.Contains(cell))
+            {
+                PlayReveal(tile);
+            }
+
             if (game.Status == GameStatus.Lost && cell.IsMine)
             {
-                PlayLossEffect(tile, scrim, cell.Exploded);
+                PlayLossEffect(tile, mineScrim, cell.Exploded);
             }
         }
     }
 
-    /// <summary>
-    /// Cosmetic only: shakes the exploded copy and pulses every mine copy. Nothing
-    /// is sent to Explorer, and closing the overlay discards the animations.
-    /// </summary>
-    private static void PlayLossEffect(Border tile, Rectangle scrim, bool exploded)
+    private static void PlayReveal(Border tile)
     {
-        scrim.BeginAnimation(
+        tile.Opacity = 0;
+        var scale = new ScaleTransform(0.94, 0.94);
+        tile.RenderTransform = scale;
+        tile.RenderTransformOrigin = new Point(0.5, 0.5);
+
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        tile.BeginAnimation(
             UIElement.OpacityProperty,
-            new DoubleAnimation
-            {
-                From = 1.0,
-                To = 0.4,
-                Duration = TimeSpan.FromMilliseconds(300),
-                AutoReverse = true,
-                RepeatBehavior = new RepeatBehavior(3)
-            });
+            new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180)) { EasingFunction = ease });
+        scale.BeginAnimation(
+            ScaleTransform.ScaleXProperty,
+            new DoubleAnimation(0.94, 1, TimeSpan.FromMilliseconds(180)) { EasingFunction = ease });
+        scale.BeginAnimation(
+            ScaleTransform.ScaleYProperty,
+            new DoubleAnimation(0.94, 1, TimeSpan.FromMilliseconds(180)) { EasingFunction = ease });
+    }
+
+    private static void PlayLossEffect(Border tile, Rectangle? scrim, bool exploded)
+    {
+        if (scrim is not null)
+        {
+            scrim.BeginAnimation(
+                UIElement.OpacityProperty,
+                new DoubleAnimation
+                {
+                    From = 1.0,
+                    To = 0.4,
+                    Duration = TimeSpan.FromMilliseconds(300),
+                    AutoReverse = true,
+                    RepeatBehavior = new RepeatBehavior(3)
+                });
+        }
 
         if (!exploded)
         {
@@ -224,31 +300,58 @@ internal static class BoardRenderer
         transform.BeginAnimation(TranslateTransform.XProperty, shake);
     }
 
+    private static void AnimateOpacity(UIElement element, double to, int milliseconds)
+    {
+        element.BeginAnimation(
+            UIElement.OpacityProperty,
+            new DoubleAnimation
+            {
+                To = to,
+                Duration = TimeSpan.FromMilliseconds(milliseconds),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            });
+    }
+
     private static Border CreateNumberBadge(int number)
     {
-        var text = new TextBlock
-        {
-            Text = number.ToString(),
-            FontFamily = new FontFamily("Consolas, Cascadia Mono"),
-            FontSize = 15,
-            FontWeight = FontWeights.Bold,
-            Foreground = NumberBrushes[Math.Clamp(number, 0, NumberBrushes.Length - 1)],
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-
         return new Border
         {
-            Child = text,
-            Background = BadgeFill,
-            BorderBrush = new SolidColorBrush(Color.FromArgb(0x66, 0xFF, 0xFF, 0xFF)),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(11),
             Width = 24,
             Height = 24,
+            CornerRadius = new CornerRadius(12),
+            Background = BadgeFill,
+            BorderBrush = BadgeBorder,
+            BorderThickness = new Thickness(1),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
-            IsHitTestVisible = false
+            IsHitTestVisible = false,
+            Child = new TextBlock
+            {
+                Text = number.ToString(),
+                FontFamily = NumberFont,
+                FontSize = 14,
+                FontWeight = FontWeights.Bold,
+                Foreground = NumberBrushes[Math.Clamp(number, 0, NumberBrushes.Length - 1)],
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            }
+        };
+    }
+
+    private static Border CreateFlagBadge()
+    {
+        return new Border
+        {
+            Width = 26,
+            Height = 26,
+            CornerRadius = new CornerRadius(13),
+            Background = BadgeFill,
+            BorderBrush = FlagBadgeBorder,
+            BorderThickness = new Thickness(1),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            IsHitTestVisible = false,
+            Child = CreateFlagGlyph()
         };
     }
 
@@ -256,47 +359,44 @@ internal static class BoardRenderer
     {
         var canvas = new Canvas
         {
-            Width = 22,
-            Height = 26,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
+            Width = 18,
+            Height = 20,
             IsHitTestVisible = false
         };
 
         var pole = new Rectangle
         {
-            Width = 3,
-            Height = 20,
+            Width = 2.5,
+            Height = 15,
             Fill = FlagBrush,
-            RadiusX = 1.5,
-            RadiusY = 1.5
+            RadiusX = 1.25,
+            RadiusY = 1.25
         };
-        Canvas.SetLeft(pole, 7);
-        Canvas.SetTop(pole, 4);
+        Canvas.SetLeft(pole, 5);
+        Canvas.SetTop(pole, 2);
         canvas.Children.Add(pole);
 
-        var cloth = new Polygon
+        canvas.Children.Add(new Polygon
         {
             Fill = FlagBrush,
             Points = new PointCollection
             {
-                new Point(9, 4),
-                new Point(21, 8),
-                new Point(9, 13)
+                new Point(7, 2),
+                new Point(17, 5.5),
+                new Point(7, 9)
             }
-        };
-        canvas.Children.Add(cloth);
+        });
 
         var foot = new Rectangle
         {
-            Width = 12,
-            Height = 3,
+            Width = 10,
+            Height = 2.5,
             Fill = FlagBrush,
-            RadiusX = 1.5,
-            RadiusY = 1.5
+            RadiusX = 1.25,
+            RadiusY = 1.25
         };
-        Canvas.SetLeft(foot, 3);
-        Canvas.SetTop(foot, 23);
+        Canvas.SetLeft(foot, 1);
+        Canvas.SetTop(foot, 16);
         canvas.Children.Add(foot);
 
         return canvas;
@@ -306,19 +406,19 @@ internal static class BoardRenderer
     {
         var canvas = new Canvas
         {
-            Width = 24,
-            Height = 24,
+            Width = 22,
+            Height = 22,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             IsHitTestVisible = false
         };
 
-        var centre = new Point(12, 12);
+        var centre = new Point(11, 11);
         for (var i = 0; i < 4; i++)
         {
             var angle = Math.PI * i / 4;
-            var dx = Math.Cos(angle) * 10;
-            var dy = Math.Sin(angle) * 10;
+            var dx = Math.Cos(angle) * 9;
+            var dy = Math.Sin(angle) * 9;
             canvas.Children.Add(new Line
             {
                 X1 = centre.X - dx,
@@ -334,16 +434,30 @@ internal static class BoardRenderer
 
         var body = new Ellipse
         {
-            Width = 13,
-            Height = 13,
+            Width = 12,
+            Height = 12,
             Fill = GlyphDark,
             Stroke = GlyphLight,
             StrokeThickness = 1.5
         };
-        Canvas.SetLeft(body, 5.5);
-        Canvas.SetTop(body, 5.5);
+        Canvas.SetLeft(body, 5);
+        Canvas.SetTop(body, 5);
         canvas.Children.Add(body);
 
         return canvas;
+    }
+
+    private static SolidColorBrush Brush(byte a, byte r, byte g, byte b)
+    {
+        var brush = new SolidColorBrush(Color.FromArgb(a, r, g, b));
+        brush.Freeze();
+        return brush;
+    }
+
+    private static LinearGradientBrush Gradient(Color top, Color bottom)
+    {
+        var brush = new LinearGradientBrush(top, bottom, new Point(0.5, 0), new Point(0.5, 1));
+        brush.Freeze();
+        return brush;
     }
 }
