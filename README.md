@@ -78,6 +78,7 @@ cd desktop-minesweeper
 - 对应的 `.sha256` 校验文件
 
 推送 `v*` 标签时，GitHub Actions 会自动构建、运行规则自检、发布这些资产。
+详细步骤见 [docs/releasing.md](docs/releasing.md)。
 
 也可以手动：
 
