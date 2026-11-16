@@ -98,4 +98,152 @@ internal static class DesktopBitmapCapture
         cropped.Freeze();
         return cropped;
     }
+
+    /// <summary>
+    /// Produces the frosted-glass backdrop for a covered cell: two separable box
+    /// passes (a cheap Gaussian approximation), a brightness factor and opaque alpha.
+    /// Runs once while the board is built; the returned bitmap is frozen.
+    /// </summary>
+    public static BitmapSource? BlurAndDarken(BitmapSource? source, int radius, double dim)
+    {
+        if (source is null || source.PixelWidth < 2 || source.PixelHeight < 2)
+        {
+            return null;
+        }
+
+        try
+        {
+            var width = source.PixelWidth;
+            var height = source.PixelHeight;
+            var stride = width * 4;
+            var pixels = new byte[stride * height];
+            source.CopyPixels(pixels, stride, 0);
+
+            for (var i = 3; i < pixels.Length; i += 4)
+            {
+                pixels[i] = 255;
+            }
+
+            var effectiveRadius = Math.Clamp(radius, 1, Math.Max(1, Math.Min(width, height) / 3));
+            BoxBlurHorizontal(pixels, width, height, effectiveRadius);
+            BoxBlurVertical(pixels, width, height, effectiveRadius);
+
+            var factor = Math.Clamp(dim, 0.0, 1.0);
+            for (var i = 0; i < pixels.Length; i += 4)
+            {
+                pixels[i] = (byte)(pixels[i] * factor);
+                pixels[i + 1] = (byte)(pixels[i + 1] * factor);
+                pixels[i + 2] = (byte)(pixels[i + 2] * factor);
+            }
+
+            var result = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgra32, null, pixels, stride);
+            result.Freeze();
+            return result;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static void BoxBlurHorizontal(byte[] pixels, int width, int height, int radius)
+    {
+        var temp = new byte[pixels.Length];
+        for (var y = 0; y < height; y++)
+        {
+            var row = y * width * 4;
+            int sumB = 0, sumG = 0, sumR = 0;
+            var left = 0;
+            var right = Math.Min(radius, width - 1);
+            for (var x = left; x <= right; x++)
+            {
+                var i = row + x * 4;
+                sumB += pixels[i];
+                sumG += pixels[i + 1];
+                sumR += pixels[i + 2];
+            }
+
+            for (var x = 0; x < width; x++)
+            {
+                var count = right - left + 1;
+                var o = row + x * 4;
+                temp[o] = (byte)(sumB / count);
+                temp[o + 1] = (byte)(sumG / count);
+                temp[o + 2] = (byte)(sumR / count);
+                temp[o + 3] = 255;
+
+                var remove = x - radius;
+                if (remove >= 0)
+                {
+                    var i = row + remove * 4;
+                    sumB -= pixels[i];
+                    sumG -= pixels[i + 1];
+                    sumR -= pixels[i + 2];
+                    left++;
+                }
+
+                var add = x + radius + 1;
+                if (add < width)
+                {
+                    var i = row + add * 4;
+                    sumB += pixels[i];
+                    sumG += pixels[i + 1];
+                    sumR += pixels[i + 2];
+                    right++;
+                }
+            }
+        }
+
+        Buffer.BlockCopy(temp, 0, pixels, 0, pixels.Length);
+    }
+
+    private static void BoxBlurVertical(byte[] pixels, int width, int height, int radius)
+    {
+        var temp = new byte[pixels.Length];
+        for (var x = 0; x < width; x++)
+        {
+            int sumB = 0, sumG = 0, sumR = 0;
+            var top = 0;
+            var bottom = Math.Min(radius, height - 1);
+            for (var y = top; y <= bottom; y++)
+            {
+                var i = (y * width + x) * 4;
+                sumB += pixels[i];
+                sumG += pixels[i + 1];
+                sumR += pixels[i + 2];
+            }
+
+            for (var y = 0; y < height; y++)
+            {
+                var count = bottom - top + 1;
+                var o = (y * width + x) * 4;
+                temp[o] = (byte)(sumB / count);
+                temp[o + 1] = (byte)(sumG / count);
+                temp[o + 2] = (byte)(sumR / count);
+                temp[o + 3] = 255;
+
+                var remove = y - radius;
+                if (remove >= 0)
+                {
+                    var i = (remove * width + x) * 4;
+                    sumB -= pixels[i];
+                    sumG -= pixels[i + 1];
+                    sumR -= pixels[i + 2];
+                    top++;
+                }
+
+                var add = y + radius + 1;
+                if (add < height)
+                {
+                    var i = (add * width + x) * 4;
+                    sumB += pixels[i];
+                    sumG += pixels[i + 1];
+                    sumR += pixels[i + 2];
+                    bottom++;
+                }
+            }
+        }
+
+        Buffer.BlockCopy(temp, 0, pixels, 0, pixels.Length);
+    }
 }

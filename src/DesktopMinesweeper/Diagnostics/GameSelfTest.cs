@@ -122,6 +122,8 @@ internal static class GameSelfTest
         Check("sparse board placed mines", sparseGame.Cells.Count(cell => cell.IsMine) == sparseGame.MineCount);
         Check("sparse first click is safe", !sparseGame.Cells[sparseGame.Cells.Count / 2].IsMine);
 
+        ImageProcessingSelfTest.Run(Check);
+
         log.AppendLine();
         log.AppendLine(failures == 0 ? "RESULT PASS" : $"RESULT FAIL ({failures})");
         File.WriteAllText(path, log.ToString(), new UTF8Encoding(false));
