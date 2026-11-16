@@ -17,8 +17,8 @@
 4. 打标签并推送：
 
    ```powershell
-   git tag -a v1.0.0 -m "Desktop Minesweeper 1.0.0"
-   git push origin v1.0.0
+   git tag -a v1.1.0 -m "Desktop Minesweeper 1.1.0"
+   git push origin v1.1.0
    ```
 
 5. 工作流会依次执行：
@@ -50,7 +50,7 @@ Get-ChildItem .\dist -File
 
 ```powershell
 .\run.ps1 -SelfTest
-.\scripts\verify-exit-safety.ps1 -ExePath .\dist\DesktopMinesweeper-1.0.0-win-x64.exe
+.\scripts\verify-exit-safety.ps1 -ExePath .\dist\DesktopMinesweeper-1.1.0-win-x64.exe
 ```
 
 ## 版本号

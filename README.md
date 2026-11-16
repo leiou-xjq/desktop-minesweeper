@@ -2,8 +2,9 @@
 
 一个轻量的 Windows 桌面小工具：把桌面图标变成扫雷格子。
 
-> **当前状态：1.0.0 发布就绪（阶段 5 完成）。**
+> **当前状态：1.1.0（玻璃拟态界面）。**
 > 透明覆盖层、图标锚定网格、固定网格降级、完整扫雷规则、踩雷反馈与退出安全均已完成。
+> 未翻开格为毛玻璃效果，已翻开格清晰通透，状态栏为玻璃胶囊，动效克制。
 > 提供自包含单文件 exe（无需安装 .NET）、zip 包与 SHA-256 校验。
 > 阶段 0 的只读对齐探针保留为 `-Probe` 诊断模式。
 
@@ -17,7 +18,8 @@
 - 真实桌面图标**只读**：不移动、不重命名、不隐藏、不修改。
 - 以图标槽位生成棋盘网格，每个格子显示该图标的只读副本。
 - 完整扫雷规则：左键翻开、右键插旗、数字提示、首击安全、胜负判定。
-- 踩雷时爆炸格抖动、所有地雷脉冲闪烁——动画只作用于覆盖层副本。
+- 玻璃拟态界面：未翻开格是模糊透出的毛玻璃，已翻开格清晰通透，状态栏为玻璃胶囊。
+- 悬停高光、翻开淡入缩放；踩雷时爆炸格抖动、所有地雷脉冲闪烁——动画只作用于覆盖层副本。
 - 图标读取失败或数量不足时，自动降级为 10×8 固定网格。
 - 状态栏提供剩余雷数、计时、重开与退出。
 - Esc 退出或进程被强制结束后，覆盖层由系统销毁，桌面保持原样。
@@ -51,7 +53,7 @@
   解压原生库，不写注册表、不请求管理员权限。
 - 可选的 `-win-x64-fx.exe` 体积约 0.2 MB，需要系统已安装 .NET 8 Desktop Runtime。
 - 程序未做代码签名，Windows SmartScreen 可能提示“未知发布者”；可选择“更多信息 → 仍要运行”。
-- 校验下载：`Get-FileHash .\DesktopMinesweeper-1.0.0-win-x64.zip -Algorithm SHA256`
+- 校验下载：`Get-FileHash .\DesktopMinesweeper-1.1.0-win-x64.zip -Algorithm SHA256`
   与同目录 `.sha256` 文件中的值比较。
 
 ## 从源码构建（无需管理员权限）
@@ -197,11 +199,13 @@ Desktop Minesweeper is a lightweight Windows overlay game that turns desktop ico
 into Minesweeper cells. It **only reads** icon metadata using Win32 `LVM_GET*`
 messages and never moves, renames, hides, or modifies real desktop icons.
 
-The project is at **1.0.0**: a transparent topmost overlay that maps desktop icon
+The project is at **1.1.0**: a transparent topmost overlay that maps desktop icon
 slots to a playable Minesweeper board with flood reveal, flags, first-click safety,
-win/loss detection, and cosmetic-only shake/pulse feedback. It falls back to a fixed
-10×8 grid when icon metadata is unavailable. The phase-0 alignment probe is still
-available via `-Probe`, `-SelfTest` runs the headless rules check, and
+win/loss detection, and cosmetic-only shake/pulse feedback. The board uses a
+glassmorphism style: covered cells show blurred icon silhouettes, revealed cells are
+crisp, and the status bar is a glass capsule. It falls back to a fixed 10×8 grid when
+icon metadata is unavailable. The phase-0 alignment probe is still available via
+`-Probe`, `-SelfTest` runs the headless rules and image checks, and
 `scripts/verify-exit-safety.ps1` validates every exit path against a before/after
 icon dump.
 
