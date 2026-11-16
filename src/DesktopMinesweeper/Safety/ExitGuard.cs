@@ -13,8 +13,12 @@ internal static class ExitGuard
         app.DispatcherUnhandledException += (_, args) =>
         {
             args.Handled = true;
-            CloseAll(app);
+
+            // Request shutdown with a non-zero code before closing windows:
+            // closing the last window would otherwise trigger OnLastWindowClose
+            // and report a normal exit code.
             app.Shutdown(1);
+            CloseAll(app);
         };
 
         AppDomain.CurrentDomain.UnhandledException += (_, _) => CloseAll(app);

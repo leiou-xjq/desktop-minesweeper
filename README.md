@@ -2,9 +2,10 @@
 
 一个轻量的 Windows 桌面小工具：把桌面图标变成扫雷格子。
 
-> **当前状态：阶段 3（扫雷核心玩法）。**
-> 透明覆盖层、图标锚定网格、图标副本与固定网格降级均已完成，并接入布雷、首击安全、
-> 翻格、插旗、数字、胜负判定与 `R` 重开。
+> **当前状态：阶段 4（踩雷反馈与退出安全）。**
+> 透明覆盖层、图标锚定网格、固定网格降级、完整扫雷规则均已完成；
+> 踩雷时只有覆盖层上的副本抖动/闪烁，真实图标不动。
+> 所有退出路径已通过自动化脚本验收。
 > 阶段 0 的只读对齐探针保留为 `-Probe` 诊断模式。
 
 [English summary](#english-summary) · [安全边界](docs/safety.md) · [更新记录](CHANGELOG.md)
@@ -17,6 +18,7 @@
 - 真实桌面图标**只读**：不移动、不重命名、不隐藏、不修改。
 - 以图标槽位生成棋盘网格，每个格子显示该图标的只读副本。
 - 完整扫雷规则：左键翻开、右键插旗、数字提示、首击安全、胜负判定。
+- 踩雷时爆炸格抖动、所有地雷脉冲闪烁——动画只作用于覆盖层副本。
 - 图标读取失败或数量不足时，自动降级为 10×8 固定网格。
 - 状态栏提供剩余雷数、计时、重开与退出。
 - Esc 退出或进程被强制结束后，覆盖层由系统销毁，桌面保持原样。
@@ -68,7 +70,7 @@ cd desktop-minesweeper
 > 提示：点击状态栏可让覆盖层重新获得焦点，之后 `Esc` 即可生效。
 > 已翻开的格子不会被右键误标记；旗子保护下的格子不会因左键翻开。
 
-## 阶段 3 手动验收
+## 阶段 3 / 4 手动验收
 
 1. 运行 `.\run.ps1`。
 2. 桌面除图标格子和底部状态栏外应完全可见、可交互。
@@ -77,9 +79,20 @@ cd desktop-minesweeper
 5. 翻开空格时自动展开相连的空白区域；有雷相邻时显示彩色数字。
 6. 右键可插旗/取消旗子；“剩余”数字随旗子数量变化。
 7. 翻开所有非雷格子时显示绿色“胜利”提示，所有雷自动插旗。
-8. 踩到雷时该格变红、所有雷显示为地雷图标，并提示按 `R` 重开。
+8. 踩到雷时该格变红并左右抖动，所有地雷脉冲闪烁，提示按 `R` 重开。
 9. 计时从第一次翻开开始走动，胜负后停止；按 `R` 或点“重开”重新读图并归零。
 10. 退出前后桌面图标位置与名称不变；强制结束进程也同样。
+11. 抖动/闪烁期间真实图标保持不动，覆盖层消失后桌面立即恢复原样。
+
+### 退出路径自动验收
+
+```powershell
+.\build.ps1
+.\scripts\verify-exit-safety.ps1
+```
+
+脚本会依次验证：退出按钮/Esc 代码路径、窗口关闭（Alt+F4）、真实 Esc 键、强制结束进程、
+未处理异常兜底。每一步都会重新读取 47 个图标坐标与文本并与基线比较，全部一致才 `PASS`。
 
 ### 降级验证
 
@@ -129,7 +142,7 @@ cd desktop-minesweeper
 - [x] 阶段 1：透明覆盖层骨架、状态栏、Esc/按钮退出
 - [x] 阶段 2：图标快照与图标锚定网格、固定网格降级
 - [x] 阶段 3：扫雷核心（布雷/首击安全/翻格/插旗/胜负/重开）
-- [ ] 阶段 4：踩雷抖动与所有退出路径的安全验收
+- [x] 阶段 4：踩雷抖动/闪烁与所有退出路径的安全验收
 - [ ] 阶段 5：GitHub Actions 发布自包含单文件
 
 ## 已知限制
@@ -152,11 +165,13 @@ Desktop Minesweeper is a lightweight Windows overlay game that turns desktop ico
 into Minesweeper cells. It **only reads** icon metadata using Win32 `LVM_GET*`
 messages and never moves, renames, hides, or modifies real desktop icons.
 
-The project is currently at **phase 3**: a transparent topmost overlay that maps
+The project is currently at **phase 4**: a transparent topmost overlay that maps
 desktop icon slots to a playable Minesweeper board with flood reveal, flags,
-first-click safety and win/loss detection. It falls back to a fixed 10×8 grid when
-icon metadata is unavailable. The phase-0 alignment probe is still available via
-`-Probe`, and `-SelfTest` runs the headless rules check.
+first-click safety, win/loss detection, and cosmetic-only shake/pulse feedback.
+It falls back to a fixed 10×8 grid when icon metadata is unavailable. The phase-0
+alignment probe is still available via `-Probe`, `-SelfTest` runs the headless rules
+check, and `scripts/verify-exit-safety.ps1` validates every exit path against a
+before/after icon dump.
 Build with `.\build.ps1`, run with `.\run.ps1`, quit with `Esc` or the Exit button.
 
 MIT licensed.

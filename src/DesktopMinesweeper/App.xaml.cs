@@ -21,6 +21,39 @@ public partial class App : Application
 
         ExitGuard.Attach(this);
 
+        // Automated exit-path checks: show the real overlay, then close it through the
+        // same code path as the Exit button / Esc.
+        if (e.Args.Length >= 2 && e.Args[0] == "--auto-exit" && int.TryParse(e.Args[1], out var exitMs))
+        {
+            var exitWindow = new OverlayWindow();
+            exitWindow.Show();
+            var exitTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(Math.Max(200, exitMs)) };
+            exitTimer.Tick += (_, _) =>
+            {
+                exitTimer.Stop();
+                exitWindow.Close();
+                Shutdown(0);
+            };
+            exitTimer.Start();
+            return;
+        }
+
+        // Automated exit-path checks: raise an unhandled dispatcher exception so
+        // ExitGuard has to remove the overlay.
+        if (e.Args.Length >= 2 && e.Args[0] == "--crash" && int.TryParse(e.Args[1], out var crashMs))
+        {
+            var crashWindow = new OverlayWindow();
+            crashWindow.Show();
+            var crashTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(Math.Max(200, crashMs)) };
+            crashTimer.Tick += (_, _) =>
+            {
+                crashTimer.Stop();
+                throw new InvalidOperationException("Diagnostic crash requested by --crash.");
+            };
+            crashTimer.Start();
+            return;
+        }
+
         // Headless rules check; no window is created.
         if (e.Args.Length >= 2 && e.Args[0] == "--selftest")
         {

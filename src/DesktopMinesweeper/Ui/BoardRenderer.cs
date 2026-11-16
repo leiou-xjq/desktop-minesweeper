@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using DesktopMinesweeper.Game;
@@ -173,7 +174,54 @@ internal static class BoardRenderer
             Canvas.SetLeft(tile, visual.X);
             Canvas.SetTop(tile, visual.Y);
             canvas.Children.Add(tile);
+
+            if (game.Status == GameStatus.Lost && cell.IsMine)
+            {
+                PlayLossEffect(tile, scrim, cell.Exploded);
+            }
         }
+    }
+
+    /// <summary>
+    /// Cosmetic only: shakes the exploded copy and pulses every mine copy. Nothing
+    /// is sent to Explorer, and closing the overlay discards the animations.
+    /// </summary>
+    private static void PlayLossEffect(Border tile, Rectangle scrim, bool exploded)
+    {
+        scrim.BeginAnimation(
+            UIElement.OpacityProperty,
+            new DoubleAnimation
+            {
+                From = 1.0,
+                To = 0.4,
+                Duration = TimeSpan.FromMilliseconds(300),
+                AutoReverse = true,
+                RepeatBehavior = new RepeatBehavior(3)
+            });
+
+        if (!exploded)
+        {
+            return;
+        }
+
+        var shake = new DoubleAnimationUsingKeyFrames
+        {
+            Duration = TimeSpan.FromMilliseconds(550),
+            RepeatBehavior = new RepeatBehavior(2)
+        };
+        shake.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromPercent(0.0)));
+        shake.KeyFrames.Add(new LinearDoubleKeyFrame(8, KeyTime.FromPercent(0.12)));
+        shake.KeyFrames.Add(new LinearDoubleKeyFrame(-8, KeyTime.FromPercent(0.24)));
+        shake.KeyFrames.Add(new LinearDoubleKeyFrame(6, KeyTime.FromPercent(0.36)));
+        shake.KeyFrames.Add(new LinearDoubleKeyFrame(-6, KeyTime.FromPercent(0.48)));
+        shake.KeyFrames.Add(new LinearDoubleKeyFrame(4, KeyTime.FromPercent(0.60)));
+        shake.KeyFrames.Add(new LinearDoubleKeyFrame(-3, KeyTime.FromPercent(0.72)));
+        shake.KeyFrames.Add(new LinearDoubleKeyFrame(2, KeyTime.FromPercent(0.84)));
+        shake.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromPercent(1.0)));
+
+        var transform = new TranslateTransform();
+        tile.RenderTransform = transform;
+        transform.BeginAnimation(TranslateTransform.XProperty, shake);
     }
 
     private static Border CreateNumberBadge(int number)
