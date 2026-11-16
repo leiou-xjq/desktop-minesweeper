@@ -11,17 +11,18 @@
         WindowStartupLocation="Manual"
         SnapsToDevicePixels="True"
         UseLayoutRounding="True"
-        FontFamily="Segoe UI, Microsoft YaHei UI"
-        FontSize="12">
+        FontFamily="Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI"
+        FontSize="12.5">
 
     <Window.Resources>
-        <Style x:Key="BarButton" TargetType="Button">
-            <Setter Property="Foreground" Value="#E6FFFFFF" />
-            <Setter Property="Background" Value="#1A00E5FF" />
-            <Setter Property="BorderBrush" Value="#4D00E5FF" />
+        <Style x:Key="GhostButton" TargetType="Button">
+            <Setter Property="Foreground" Value="#D9E6F0F5" />
+            <Setter Property="Background" Value="#0FFFFFFF" />
+            <Setter Property="BorderBrush" Value="#26FFFFFF" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="10,4" />
-            <Setter Property="Margin" Value="6,0,0,0" />
+            <Setter Property="Padding" Value="11,5" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="FontSize" Value="12" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="Template">
@@ -31,7 +32,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="5"
+                                CornerRadius="8"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
@@ -39,11 +40,12 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#3300E5FF" />
-                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#9900E5FF" />
+                                <Setter Property="Foreground" Value="#FFFFFFFF" />
+                                <Setter TargetName="Chrome" Property="Background" Value="#1F5EEAD4" />
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#995EEAD4" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#5500E5FF" />
+                                <Setter TargetName="Chrome" Property="Background" Value="#335EEAD4" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -54,86 +56,111 @@
 
     <Grid x:Name="Root" Background="{x:Null}">
         <Canvas x:Name="ProbeCanvas" IsHitTestVisible="False" />
-
         <Canvas x:Name="BoardCanvas" />
 
         <Border x:Name="NoticeBadge"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
-                Margin="0,16,0,0"
-                Padding="12,6"
-                CornerRadius="6"
-                Background="#E6101418"
-                BorderBrush="#99FFB74D"
+                Margin="0,18,0,0"
+                Padding="0,7,13,7"
+                CornerRadius="10"
+                Background="#E60E1720"
+                BorderBrush="#33FBBF24"
                 BorderThickness="1"
                 Visibility="Collapsed"
                 IsHitTestVisible="False">
-            <TextBlock x:Name="NoticeText"
-                       Foreground="#FFFFB74D"
-                       FontSize="12" />
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Rectangle Width="3" Height="14" Fill="#FBBF24"
+                           RadiusX="1.5" RadiusY="1.5" Margin="12,0,10,0" />
+                <TextBlock x:Name="NoticeText"
+                           Foreground="#FFFBBF24"
+                           FontSize="12" />
+            </StackPanel>
         </Border>
 
         <Border x:Name="StatusBar"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Bottom"
-                Margin="0,0,0,18"
-                Padding="12,8"
-                CornerRadius="8"
-                Background="#E6101418"
-                BorderBrush="#5500E5FF"
-                BorderThickness="1">
+                Margin="0,0,0,20"
+                CornerRadius="14"
+                BorderThickness="1"
+                BorderBrush="#2EFFFFFF">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                    <GradientStop Color="#E60E1720" Offset="0" />
+                    <GradientStop Color="#F20B1116" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
             <Border.Effect>
-                <DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.55" Color="Black" />
+                <DropShadowEffect BlurRadius="24" ShadowDepth="3" Opacity="0.45" Color="#000000" />
             </Border.Effect>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="桌面扫雷"
-                           Foreground="#FF00E5FF"
-                           FontWeight="SemiBold"
-                           VerticalAlignment="Center" />
-                <Rectangle Width="1" Height="16" Fill="#33FFFFFF" Margin="10,0" />
-                <TextBlock Text="剩余" Foreground="#FF9E9E9E" VerticalAlignment="Center" />
-                <TextBlock x:Name="MinesText"
-                           Text="—"
-                           Foreground="White"
-                           FontWeight="SemiBold"
-                           MinWidth="22"
-                           Margin="6,0,0,0"
-                           VerticalAlignment="Center" />
-                <Rectangle Width="1" Height="16" Fill="#33FFFFFF" Margin="10,0" />
-                <TextBlock Text="格子" Foreground="#FF9E9E9E" VerticalAlignment="Center" />
-                <TextBlock x:Name="GridText"
-                           Text="—"
-                           Foreground="White"
-                           FontWeight="SemiBold"
-                           MinWidth="22"
-                           Margin="6,0,0,0"
-                           VerticalAlignment="Center" />
-                <Rectangle Width="1" Height="16" Fill="#33FFFFFF" Margin="10,0" />
-                <TextBlock Text="时间" Foreground="#FF9E9E9E" VerticalAlignment="Center" />
-                <TextBlock x:Name="TimerText"
-                           Text="00:00"
-                           Foreground="White"
-                           FontFamily="Consolas, Cascadia Mono"
-                           FontWeight="SemiBold"
-                           MinWidth="46"
-                           Margin="6,0,0,0"
-                           VerticalAlignment="Center" />
-                <Rectangle Width="1" Height="16" Fill="#33FFFFFF" Margin="10,0" />
-                <TextBlock x:Name="StateText"
-                           Text="左键翻开 · 右键插旗"
-                           Foreground="#FFB0BEC5"
-                           VerticalAlignment="Center"
-                           MaxWidth="200"
-                           TextTrimming="CharacterEllipsis" />
-                <Button x:Name="RestartButton"
-                        Content="重开  R"
-                        Style="{StaticResource BarButton}"
-                        Click="OnRestartClick" />
-                <Button x:Name="ExitButton"
-                        Content="退出  Esc"
-                        Style="{StaticResource BarButton}"
-                        Click="OnExitClick" />
-            </StackPanel>
+
+            <Grid>
+                <Rectangle Height="1" VerticalAlignment="Top" Margin="16,0,16,0" Fill="#40FFFFFF" />
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,10,16,10">
+                    <Ellipse Width="7" Height="7" Fill="#5EEAD4" VerticalAlignment="Center" />
+
+                    <TextBlock Text="桌面扫雷"
+                               Foreground="#FFEAF7F6"
+                               FontWeight="SemiBold"
+                               Margin="9,0,0,0"
+                               VerticalAlignment="Center" />
+
+                    <Rectangle Width="1" Height="14" Fill="#1FFFFFFF" Margin="13,0" />
+
+                    <TextBlock Text="剩余" Foreground="#FF8FA3B0" VerticalAlignment="Center" />
+                    <TextBlock x:Name="MinesText"
+                               Text="—"
+                               Foreground="#FFF2FBFA"
+                               FontFamily="Cascadia Mono, Consolas"
+                               FontWeight="SemiBold"
+                               MinWidth="22"
+                               Margin="7,0,0,0"
+                               VerticalAlignment="Center" />
+
+                    <Rectangle Width="1" Height="14" Fill="#1FFFFFFF" Margin="13,0" />
+
+                    <TextBlock Text="格子" Foreground="#FF8FA3B0" VerticalAlignment="Center" />
+                    <TextBlock x:Name="GridText"
+                               Text="—"
+                               Foreground="#FFF2FBFA"
+                               FontFamily="Cascadia Mono, Consolas"
+                               FontWeight="SemiBold"
+                               MinWidth="22"
+                               Margin="7,0,0,0"
+                               VerticalAlignment="Center" />
+
+                    <Rectangle Width="1" Height="14" Fill="#1FFFFFFF" Margin="13,0" />
+
+                    <TextBlock Text="时间" Foreground="#FF8FA3B0" VerticalAlignment="Center" />
+                    <TextBlock x:Name="TimerText"
+                               Text="00:00"
+                               Foreground="#FFF2FBFA"
+                               FontFamily="Cascadia Mono, Consolas"
+                               FontWeight="SemiBold"
+                               MinWidth="46"
+                               Margin="7,0,0,0"
+                               VerticalAlignment="Center" />
+
+                    <Rectangle Width="1" Height="14" Fill="#1FFFFFFF" Margin="13,0" />
+
+                    <TextBlock x:Name="StateText"
+                               Text="左键翻开 · 右键插旗"
+                               Foreground="#FFB0BEC5"
+                               VerticalAlignment="Center"
+                               MaxWidth="190"
+                               TextTrimming="CharacterEllipsis" />
+
+                    <Button x:Name="RestartButton"
+                            Content="重开  R"
+                            Style="{StaticResource GhostButton}"
+                            Click="OnRestartClick" />
+                    <Button x:Name="ExitButton"
+                            Content="退出  Esc"
+                            Style="{StaticResource GhostButton}"
+                            Click="OnExitClick" />
+                </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </Window>

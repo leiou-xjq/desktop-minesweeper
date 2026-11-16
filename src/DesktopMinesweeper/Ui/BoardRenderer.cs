@@ -25,6 +25,8 @@ internal static class BoardRenderer
         Color.FromArgb(0x59, 0x10, 0x1A, 0x22),
         Color.FromArgb(0x99, 0x08, 0x0D, 0x12));
     private static readonly Brush RevealedWash = Brush(0x1A, 0xF2, 0xFF, 0xFF);
+    private static readonly Brush FixedBase = Brush(0xF2, 0x0A, 0x0F, 0x14);
+    private static readonly Brush FixedRevealedWash = Brush(0x2E, 0x5E, 0xEA, 0xD4);
     private static readonly Brush HoverSheen = Gradient(
         Color.FromArgb(0x1A, 0xFF, 0xFF, 0xFF),
         Color.FromArgb(0x05, 0xFF, 0xFF, 0xFF));
@@ -90,6 +92,14 @@ internal static class BoardRenderer
             var backdropSource = cell.IsRevealed
                 ? visual.Thumbnail
                 : visual.GlassThumbnail ?? visual.Thumbnail;
+            var fixedCell = backdropSource is null;
+            var badgeSize = Math.Clamp(Math.Min(visual.Width, visual.Height) * 0.28, 24, 34);
+
+            if (fixedCell)
+            {
+                content.Children.Add(new Rectangle { Fill = FixedBase, IsHitTestVisible = false });
+            }
+
             if (backdropSource is BitmapSource backdrop)
             {
                 content.Children.Add(new Image
@@ -113,7 +123,11 @@ internal static class BoardRenderer
             }
             else if (cell.IsRevealed)
             {
-                content.Children.Add(new Rectangle { Fill = RevealedWash, IsHitTestVisible = false });
+                content.Children.Add(new Rectangle
+                {
+                    Fill = fixedCell ? FixedRevealedWash : RevealedWash,
+                    IsHitTestVisible = false
+                });
             }
             else
             {
@@ -137,18 +151,18 @@ internal static class BoardRenderer
 
             if (revealedMine)
             {
-                content.Children.Add(CreateMineGlyph());
+                content.Children.Add(CreateMineGlyph(badgeSize));
             }
             else if (cell.IsRevealed)
             {
                 if (cell.AdjacentMines > 0)
                 {
-                    content.Children.Add(CreateNumberBadge(cell.AdjacentMines));
+                    content.Children.Add(CreateNumberBadge(cell.AdjacentMines, badgeSize));
                 }
             }
             else if (cell.IsFlagged)
             {
-                content.Children.Add(CreateFlagBadge());
+                content.Children.Add(CreateFlagBadge(badgeSize));
             }
 
             if (backdropSource is null && !string.IsNullOrWhiteSpace(visual.Text))
@@ -312,13 +326,13 @@ internal static class BoardRenderer
             });
     }
 
-    private static Border CreateNumberBadge(int number)
+    private static Border CreateNumberBadge(int number, double size)
     {
         return new Border
         {
-            Width = 24,
-            Height = 24,
-            CornerRadius = new CornerRadius(12),
+            Width = size,
+            Height = size,
+            CornerRadius = new CornerRadius(size / 2),
             Background = BadgeFill,
             BorderBrush = BadgeBorder,
             BorderThickness = new Thickness(1),
@@ -329,7 +343,7 @@ internal static class BoardRenderer
             {
                 Text = number.ToString(),
                 FontFamily = NumberFont,
-                FontSize = 14,
+                FontSize = size * 0.58,
                 FontWeight = FontWeights.Bold,
                 Foreground = NumberBrushes[Math.Clamp(number, 0, NumberBrushes.Length - 1)],
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -338,20 +352,27 @@ internal static class BoardRenderer
         };
     }
 
-    private static Border CreateFlagBadge()
+    private static Border CreateFlagBadge(double size)
     {
         return new Border
         {
-            Width = 26,
-            Height = 26,
-            CornerRadius = new CornerRadius(13),
+            Width = size,
+            Height = size,
+            CornerRadius = new CornerRadius(size / 2),
             Background = BadgeFill,
             BorderBrush = FlagBadgeBorder,
             BorderThickness = new Thickness(1),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             IsHitTestVisible = false,
-            Child = CreateFlagGlyph()
+            Child = new Viewbox
+            {
+                Width = size * 0.68,
+                Height = size * 0.68,
+                Stretch = Stretch.Uniform,
+                Child = CreateFlagGlyph(),
+                IsHitTestVisible = false
+            }
         };
     }
 
@@ -402,15 +423,12 @@ internal static class BoardRenderer
         return canvas;
     }
 
-    private static Canvas CreateMineGlyph()
+    private static FrameworkElement CreateMineGlyph(double size)
     {
         var canvas = new Canvas
         {
             Width = 22,
-            Height = 22,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            IsHitTestVisible = false
+            Height = 22
         };
 
         var centre = new Point(11, 11);
@@ -444,7 +462,14 @@ internal static class BoardRenderer
         Canvas.SetTop(body, 5);
         canvas.Children.Add(body);
 
-        return canvas;
+        return new Viewbox
+        {
+            Width = size * 0.82,
+            Height = size * 0.82,
+            Stretch = Stretch.Uniform,
+            Child = canvas,
+            IsHitTestVisible = false
+        };
     }
 
     private static SolidColorBrush Brush(byte a, byte r, byte g, byte b)
