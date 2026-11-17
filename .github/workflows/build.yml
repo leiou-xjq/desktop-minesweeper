@@ -67,6 +67,20 @@ jobs:
           Get-Content $report -Encoding UTF8
           if ($process.ExitCode -ne 0) { throw "published self-test failed with exit code $($process.ExitCode)" }
 
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer
+        shell: pwsh
+        run: .\installer\build-installer.ps1 -Version '${{ steps.version.outputs.value }}'
+
+      - name: Verify installer
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem dist -Filter '*-setup.exe'
+          if (-not $setup) { throw 'Installer was not produced.' }
+          Get-ChildItem dist -Filter '*-setup.exe*' | Select-Object Name, Length
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
