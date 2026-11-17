@@ -2,10 +2,9 @@
 
 一个轻量的 Windows 桌面小工具：把桌面图标变成扫雷格子。
 
-> **当前状态：1.1.0（玻璃拟态界面）。**
-> 透明覆盖层、图标锚定网格、固定网格降级、完整扫雷规则、踩雷反馈与退出安全均已完成。
-> 未翻开格为毛玻璃效果，已翻开格清晰通透，状态栏为玻璃胶囊，动效克制。
-> 提供自包含单文件 exe（无需安装 .NET）、zip 包与 SHA-256 校验。
+> **当前状态：1.2.0（带安装包）。**
+> 透明覆盖层、图标锚定网格、固定网格降级、完整扫雷规则、玻璃拟态界面与退出安全均已完成。
+> 提供仅当前用户、无需管理员的 `setup.exe` 安装包；便携 zip 与单文件 exe 继续保留。
 > 阶段 0 的只读对齐探针保留为 `-Probe` 诊断模式。
 
 [English summary](#english-summary) · [安全边界](docs/safety.md) · [更新记录](CHANGELOG.md)
@@ -23,38 +22,47 @@
 - 图标读取失败或数量不足时，自动降级为 10×8 固定网格。
 - 状态栏提供剩余雷数、计时、重开与退出。
 - Esc 退出或进程被强制结束后，覆盖层由系统销毁，桌面保持原样。
+- 提供安装包：开始菜单快捷方式、可选桌面快捷方式、安装后启动、标准卸载。
 
 ## 安全承诺
 
 1. 不移动、删除、重命名、隐藏或修改任何真实桌面图标。
 2. 不向 `explorer.exe` 发送任何改变图标位置的命令（无 `LVM_SETITEMPOSITION`、`LVM_ARRANGE`、`LVM_SORTITEMS`）。
 3. 只发送 `LVM_GET*` 只读消息，并读取图标位置/文本。
-4. 不写注册表、不注册开机启动、不改系统设置、不请求管理员权限。
+4. 程序运行时不写注册表、不注册开机启动、不改系统设置、不请求管理员权限。
 5. 无网络请求、无遥测。
 6. 覆盖层消失即恢复，不存在“需要还原”的桌面状态。
+7. 安装器只写入开始菜单/桌面快捷方式与 HKCU 卸载信息，卸载时清理；不修改桌面图标。
 
 细节与审计说明见 [docs/safety.md](docs/safety.md)。
 
 ## 系统要求
 
 - Windows 10 1809+ / Windows 11，x64
-- 运行发布版：无需安装 .NET（自包含单文件）
+- 安装版与便携版：无需安装 .NET（自包含）
 - 从源码构建：见下节，本地脚本会自动准备项目内 .NET 8 SDK
 
-## 下载使用（推荐）
+## 下载与安装（推荐）
 
 1. 打开 [Releases](https://github.com/leiou-xjq/desktop-minesweeper/releases)。
-2. 下载 `DesktopMinesweeper-<版本>-win-x64.zip`（或直接下载 `.exe`）。
-3. 解压后双击 `DesktopMinesweeper.exe` 即可游玩；也可直接运行单文件 exe。
+2. 下载 `DesktopMinesweeper-<版本>-setup.exe`，双击安装。
+3. 安装完成页可直接启动；之后从开始菜单启动。
+4. 不想安装时，仍可下载 `-win-x64.zip` 解压运行，或直接运行单文件 exe。
 
-说明：
+安装说明：
 
-- 自包含单文件约 68 MB，内含 .NET 运行时；首次启动会由 .NET 在 `%TEMP%` 下
-  解压原生库，不写注册表、不请求管理员权限。
-- 可选的 `-win-x64-fx.exe` 体积约 0.2 MB，需要系统已安装 .NET 8 Desktop Runtime。
+- 仅当前用户安装，**不需要管理员权限**，不弹 UAC
+- 默认路径：`%LOCALAPPDATA%\Programs\DesktopMinesweeper`，安装时可修改
+- 开始菜单会创建程序项与卸载项；桌面快捷方式为可选任务，默认不勾选
+- 卸载：设置 → 应用 → Desktop Minesweeper，或开始菜单中的卸载项
+- 安装器约 63 MB；便携单文件约 68 MB，内含 .NET 运行时
+
+校验与签名：
+
 - 程序未做代码签名，Windows SmartScreen 可能提示“未知发布者”；可选择“更多信息 → 仍要运行”。
-- 校验下载：`Get-FileHash .\DesktopMinesweeper-1.1.0-win-x64.zip -Algorithm SHA256`
+- 校验下载：`Get-FileHash .\DesktopMinesweeper-1.2.0-setup.exe -Algorithm SHA256`
   与同目录 `.sha256` 文件中的值比较。
+- 可选的 `-win-x64-fx.exe` 体积约 0.2 MB，需要系统已安装 .NET 8 Desktop Runtime。
 
 ## 从源码构建（无需管理员权限）
 
@@ -79,10 +87,18 @@ cd desktop-minesweeper
 - `DesktopMinesweeper-<版本>-win-x64-fx.exe`（依赖 .NET 8 Desktop Runtime）
 - 对应的 `.sha256` 校验文件
 
+制作安装包（需要 Inno Setup 6，可仅当前用户安装）：
+
+```powershell
+.\installer\build-installer.ps1
+```
+
+输出 `DesktopMinesweeper-<版本>-setup.exe` 与 `.sha256`；找不到 Inno 时脚本会给出安装提示。
+
 推送 `v*` 标签时，GitHub Actions 会自动构建、运行规则自检、发布这些资产。
 详细步骤见 [docs/releasing.md](docs/releasing.md)。
 
-也可以手动：
+也可以手动运行：
 
 ```powershell
 .\.dotnet\dotnet.exe run --project .\src\DesktopMinesweeper\DesktopMinesweeper.csproj
@@ -199,7 +215,7 @@ Desktop Minesweeper is a lightweight Windows overlay game that turns desktop ico
 into Minesweeper cells. It **only reads** icon metadata using Win32 `LVM_GET*`
 messages and never moves, renames, hides, or modifies real desktop icons.
 
-The project is at **1.1.0**: a transparent topmost overlay that maps desktop icon
+The project is at **1.2.0**: a transparent topmost overlay that maps desktop icon
 slots to a playable Minesweeper board with flood reveal, flags, first-click safety,
 win/loss detection, and cosmetic-only shake/pulse feedback. The board uses a
 glassmorphism style: covered cells show blurred icon silhouettes, revealed cells are
@@ -209,9 +225,12 @@ icon metadata is unavailable. The phase-0 alignment probe is still available via
 `scripts/verify-exit-safety.ps1` validates every exit path against a before/after
 icon dump.
 
-Releases are self-contained single-file Windows x64 builds (no .NET install needed),
-published as a zip with SHA-256 checksums; tags push them to GitHub Releases.
-Build with `.\build.ps1`, package with `.\publish.ps1`, run with `.\run.ps1`,
-quit with `Esc` or the Exit button.
+Releases include a per-user `setup.exe` (Inno Setup, no administrator rights) with
+Start Menu shortcuts, an optional desktop shortcut, launch-after-install and a clean
+uninstaller. Portable self-contained single-file builds and a zip with SHA-256
+checksums remain available; tags publish everything to GitHub Releases.
+Build with `.\build.ps1`, package with `.\publish.ps1`, compile the installer with
+`.\installer\build-installer.ps1`, run with `.\run.ps1`, quit with `Esc` or the Exit
+button.
 
 MIT licensed.

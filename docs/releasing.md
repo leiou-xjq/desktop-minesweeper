@@ -17,16 +17,17 @@
 4. 打标签并推送：
 
    ```powershell
-   git tag -a v1.1.0 -m "Desktop Minesweeper 1.1.0"
-   git push origin v1.1.0
+   git tag -a v1.2.0 -m "Desktop Minesweeper 1.2.0"
+   git push origin v1.2.0
    ```
 
 5. 工作流会依次执行：
    - Release 构建
-   - 规则自检（`--selftest`）
+   - 规则与图像自检（`--selftest`）
    - 自包含/框架依赖发布
    - 校验发布出的 exe 能独立运行
-   - 创建 GitHub Release 并附加 zip、exe 与 `.sha256`
+   - 安装 Inno Setup 并构建 `setup.exe`
+   - 创建 GitHub Release 并附加安装包、zip、exe 与 `.sha256`
 
 ## 本地预演
 
@@ -34,13 +35,17 @@
 
 ```powershell
 .\publish.ps1
+.\installer\build-installer.ps1
 Get-ChildItem .\dist -File
 ```
+
+安装包构建需要 Inno Setup 6（可仅当前用户安装，无需管理员）。
 
 输出：
 
 | 文件 | 说明 |
 |---|---|
+| `DesktopMinesweeper-<版本>-setup.exe` | 安装包（Inno Setup） |
 | `DesktopMinesweeper-<版本>-win-x64.zip` | 自包含 exe + LICENSE + README |
 | `DesktopMinesweeper-<版本>-win-x64.exe` | 自包含单文件 |
 | `DesktopMinesweeper-<版本>-win-x64-fx.exe` | 需要 .NET 8 Desktop Runtime |
@@ -50,7 +55,14 @@ Get-ChildItem .\dist -File
 
 ```powershell
 .\run.ps1 -SelfTest
-.\scripts\verify-exit-safety.ps1 -ExePath .\dist\DesktopMinesweeper-1.1.0-win-x64.exe
+.\scripts\verify-exit-safety.ps1 -ExePath .\dist\DesktopMinesweeper-1.2.0-win-x64.exe
+```
+
+并做一次安装/卸载冒烟测试：
+
+```powershell
+Start-Process .\dist\DesktopMinesweeper-1.2.0-setup.exe -ArgumentList '/VERYSILENT','/CURRENTUSER','/SUPPRESSMSGBOXES','/NORESTART' -Wait
+Start-Process "$env:LOCALAPPDATA\Programs\DesktopMinesweeper\unins000.exe" -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait
 ```
 
 ## 版本号

@@ -2,6 +2,23 @@
 
 所有重要变更记录在此文件。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [1.2.0] - 2026-11-17
+
+### Added
+
+- Inno Setup 安装包 `setup.exe`：仅当前用户安装，无需管理员权限、不弹 UAC。
+- 开始菜单程序项与卸载项；桌面快捷方式为可选任务（默认不勾选）。
+- 安装完成页可直接启动游戏。
+- 标准卸载：清理安装目录、快捷方式与 HKCU 卸载信息。
+- 应用图标（深色底 + 青色地雷），exe、快捷方式与安装器统一使用。
+- `scripts/make-icon.ps1` 可重新生成多尺寸 ICO。
+- GitHub Actions 安装 Inno Setup 并构建、校验、发布 setup.exe 与校验和。
+
+### Changed
+
+- README 下载章节改为安装包优先，同时保留便携 zip 与单文件 exe。
+- 安全文档区分“安装器”与“程序运行时”的写入行为。
+
 ## [1.1.0] - 2026-11-16
 
 ### Added
