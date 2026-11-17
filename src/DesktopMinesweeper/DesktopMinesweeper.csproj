@@ -9,6 +9,7 @@
     <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\assets\app.ico</ApplicationIcon>
     <AssemblyName>DesktopMinesweeper</AssemblyName>
     <RootNamespace>DesktopMinesweeper</RootNamespace>
     <Version>1.1.0</Version>
