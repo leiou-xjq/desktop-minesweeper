@@ -29,8 +29,9 @@ UninstallDisplayIcon={app}\{#AppExe}
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
+ShowLanguageDialog=no
+WizardSmallImageFile=..\assets\wizard-small.png
 CloseApplications=yes
-LicenseFile=..\LICENSE
 
 [Languages]
 Name: "chinesesimplified"; MessagesFile: "ChineseSimplified.isl"

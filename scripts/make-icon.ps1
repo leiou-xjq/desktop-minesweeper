@@ -108,7 +108,19 @@ try {
     $writer.Dispose()
     $output.Dispose()
 
+    $wizardPath = Join-Path (Split-Path $OutFile -Parent) 'wizard-small.png'
+    $wizard = New-Object System.Drawing.Bitmap -ArgumentList 58, 58, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+    $wizardGraphics = [System.Drawing.Graphics]::FromImage($wizard)
+    $wizardGraphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+    $wizardGraphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+    $wizardGraphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+    $wizardGraphics.DrawImage($master, (New-Object System.Drawing.Rectangle -ArgumentList 0, 0, 58, 58))
+    $wizardGraphics.Dispose()
+    $wizard.Save($wizardPath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $wizard.Dispose()
+
     Write-Host ("Wrote {0} ({1} bytes, {2} sizes)" -f $OutFile, (Get-Item $OutFile).Length, $sizes.Count)
+    Write-Host ("Wrote {0}" -f $wizardPath)
 }
 finally {
     $master.Dispose()
